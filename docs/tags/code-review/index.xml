@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Code-Review on Content Empire</title><link>https://tamirdresher.github.io/content-empire/tags/code-review/</link><description>Recent content in Code-Review on Content Empire</description><generator>Hugo</generator><language>en-us</language><lastBuildDate>Wed, 23 Jul 2025 00:00:00 +0000</lastBuildDate><atom:link href="https://tamirdresher.github.io/content-empire/tags/code-review/index.xml" rel="self" type="application/rss+xml"/><item><title>Module 3: AI-Powered Code Review and Testing</title><link>https://tamirdresher.github.io/content-empire/courses/ai-powered-dev/module-3-code-review/</link><pubDate>Wed, 23 Jul 2025 00:00:00 +0000</pubDate><guid>https://tamirdresher.github.io/content-empire/courses/ai-powered-dev/module-3-code-review/</guid><description>&lt;h1 id="module-3-ai-powered-code-review-and-testing"&gt;Module 3: AI-Powered Code Review and Testing&lt;/h1&gt;
+&lt;h2 id="learning-objectives"&gt;Learning Objectives&lt;/h2&gt;
+&lt;p&gt;By the end of this module, you will:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Understand how AI can systematically review code changes&lt;/li&gt;
+&lt;li&gt;Build an automated PR review bot using AI&lt;/li&gt;
+&lt;li&gt;Generate comprehensive test suites with AI assistance&lt;/li&gt;
+&lt;li&gt;Use AI for security vulnerability detection&lt;/li&gt;
+&lt;li&gt;Know the limits of AI code review and when human review is still essential&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id="31-the-case-for-ai-code-review"&gt;3.1 The Case for AI Code Review&lt;/h2&gt;
+&lt;p&gt;Manual code review is one of the biggest bottlenecks in software development:&lt;/p&gt;</description></item></channel></rss>

@@ -1,0 +1,531 @@
+<!doctype html><html lang=en><head><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Browser Automation with Playwright: Beyond Testing | Content Empire</title><meta name=description content="Playwright isn't just for testing — it's a powerful automation platform. From web scraping to workflow automation to monitoring, here's how to use Playwright for everything."><link rel=stylesheet href=https://tamirdresher.github.io/content-empire/css/style.css><link rel=preconnect href=https://fonts.googleapis.com><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono&display=swap" rel=stylesheet></head><body><nav class=navbar><div class=container><a href=https://tamirdresher.github.io/content-empire/ class=logo>⚡ Content Empire</a><div class=nav-links><a href=https://tamirdresher.github.io/content-empire/posts/>Articles</a>
+<a href=https://tamirdresher.github.io/content-empire/courses/>Courses</a>
+<a href=https://tamirdresher.github.io/content-empire/pages/about/>About</a></div></div></nav><main class=container><article class=post-single><header class=post-header><h1>Browser Automation with Playwright: Beyond Testing</h1><div class=post-meta><time>July 27, 2025</time>
+· By The Content Empire Team
+· 7 min read</div><div class=post-tags><span class=tag>Playwright</span> <span class=tag>automation</span> <span class=tag>scraping</span> <span class=tag>productivity</span> <span class=tag>tools</span></div></header><div class=post-content><p>When most developers hear &ldquo;Playwright,&rdquo; they think end-to-end testing. And yes, Playwright is excellent for testing. But limiting it to tests is like using a Swiss Army knife only as a bottle opener.</p><p>Playwright is a <strong>full browser automation platform</strong> — and once you start using it for tasks beyond testing, you&rsquo;ll wonder how you ever lived without it.</p><h2 id=why-playwright-for-non-testing-automation>Why Playwright for Non-Testing Automation?</h2><p>The browser automation landscape in 2026 looks like this:</p><table><thead><tr><th>Tool</th><th>Strengths</th><th>Weaknesses</th></tr></thead><tbody><tr><td>curl/httpx</td><td>Fast, simple</td><td>No JavaScript rendering</td></tr><tr><td>Puppeteer</td><td>Good Chrome support</td><td>Chrome only, API churn</td></tr><tr><td>Selenium</td><td>Wide browser support</td><td>Slow, flaky, verbose</td></tr><tr><td><strong>Playwright</strong></td><td>Multi-browser, fast, modern API</td><td>Heavier than curl</td></tr></tbody></table><p>Playwright wins for any automation that needs:</p><ul><li>JavaScript rendering (SPAs, dynamic content)</li><li>Authentication flows (login, OAuth, 2FA)</li><li>Complex interaction sequences (click, fill, drag, upload)</li><li>Reliable waiting and retry mechanisms</li><li>Multi-page workflows</li></ul><h2 id=use-case-1-data-collection-from-dynamic-sites>Use Case 1: Data Collection from Dynamic Sites</h2><p>Many valuable data sources are SPAs with no API. Playwright handles them effortlessly:</p><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-typescript data-lang=typescript><span style=display:flex><span><span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>chromium</span> } <span style=color:#66d9ef>from</span> <span style=color:#e6db74>&#39;playwright&#39;</span>;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>function</span> <span style=color:#a6e22e>collectPricingData() {</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>browser</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>chromium</span>.<span style=color:#a6e22e>launch</span>();
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>page</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>browser</span>.<span style=color:#a6e22e>newPage</span>();
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#66d9ef>goto</span>(<span style=color:#e6db74>&#39;https://competitor.com/pricing&#39;</span>);
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// Wait for the dynamic pricing table to load
+</span></span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>waitForSelector</span>(<span style=color:#e6db74>&#39;.pricing-card&#39;</span>);
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>plans</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>$$eval</span>(<span style=color:#e6db74>&#39;.pricing-card&#39;</span>, <span style=color:#a6e22e>cards</span> <span style=color:#f92672>=&gt;</span>
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>cards</span>.<span style=color:#a6e22e>map</span>(<span style=color:#a6e22e>card</span> <span style=color:#f92672>=&gt;</span> ({
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>name</span>: <span style=color:#66d9ef>card.querySelector</span>(<span style=color:#e6db74>&#39;.plan-name&#39;</span>)<span style=color:#f92672>?</span>.<span style=color:#a6e22e>textContent</span><span style=color:#f92672>?</span>.<span style=color:#a6e22e>trim</span>(),
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>price</span>: <span style=color:#66d9ef>card.querySelector</span>(<span style=color:#e6db74>&#39;.price&#39;</span>)<span style=color:#f92672>?</span>.<span style=color:#a6e22e>textContent</span><span style=color:#f92672>?</span>.<span style=color:#a6e22e>trim</span>(),
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>features</span>: <span style=color:#66d9ef>Array.from</span>(<span style=color:#a6e22e>card</span>.<span style=color:#a6e22e>querySelectorAll</span>(<span style=color:#e6db74>&#39;.feature&#39;</span>))
+</span></span><span style=display:flex><span>                .<span style=color:#a6e22e>map</span>(<span style=color:#a6e22e>f</span> <span style=color:#f92672>=&gt;</span> <span style=color:#a6e22e>f</span>.<span style=color:#a6e22e>textContent</span><span style=color:#f92672>?</span>.<span style=color:#a6e22e>trim</span>())
+</span></span><span style=display:flex><span>        }))
+</span></span><span style=display:flex><span>    );
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>browser</span>.<span style=color:#a6e22e>close</span>();
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> <span style=color:#a6e22e>plans</span>;
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// Run daily to track pricing changes
+</span></span></span><span style=display:flex><span><span style=color:#66d9ef>const</span> <span style=color:#a6e22e>pricing</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>collectPricingData</span>();
+</span></span><span style=display:flex><span><span style=color:#a6e22e>console</span>.<span style=color:#a6e22e>table</span>(<span style=color:#a6e22e>pricing</span>);
+</span></span></code></pre></td></tr></table></div></div><h3 id=handling-authentication>Handling Authentication</h3><p>Most real-world scraping requires login. Playwright&rsquo;s persistent contexts make this painless:</p><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-typescript data-lang=typescript><span style=display:flex><span><span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>chromium</span> } <span style=color:#66d9ef>from</span> <span style=color:#e6db74>&#39;playwright&#39;</span>;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>function</span> <span style=color:#a6e22e>authenticatedSession() {</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>context</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>chromium</span>.<span style=color:#a6e22e>launchPersistentContext</span>(
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>&#39;./browser-data&#39;</span>, <span style=color:#75715e>// Stores cookies, localStorage, etc.
+</span></span></span><span style=display:flex><span>        { <span style=color:#a6e22e>headless</span>: <span style=color:#66d9ef>true</span> }
+</span></span><span style=display:flex><span>    );
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>page</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>context</span>.<span style=color:#a6e22e>pages</span>()[<span style=color:#ae81ff>0</span>] <span style=color:#f92672>||</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>context</span>.<span style=color:#a6e22e>newPage</span>();
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// Check if already logged in
+</span></span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#66d9ef>goto</span>(<span style=color:#e6db74>&#39;https://app.example.com/dashboard&#39;</span>);
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> (<span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>url</span>().<span style=color:#a6e22e>includes</span>(<span style=color:#e6db74>&#39;/login&#39;</span>)) {
+</span></span><span style=display:flex><span>        <span style=color:#75715e>// Need to log in
+</span></span></span><span style=display:flex><span>        <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>fill</span>(<span style=color:#e6db74>&#39;#email&#39;</span>, <span style=color:#a6e22e>process</span>.<span style=color:#a6e22e>env</span>.<span style=color:#a6e22e>EMAIL</span><span style=color:#f92672>!</span>);
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>fill</span>(<span style=color:#e6db74>&#39;#password&#39;</span>, <span style=color:#a6e22e>process</span>.<span style=color:#a6e22e>env</span>.<span style=color:#a6e22e>PASSWORD</span><span style=color:#f92672>!</span>);
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>click</span>(<span style=color:#e6db74>&#39;button[type=&#34;submit&#34;]&#39;</span>);
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>waitForURL</span>(<span style=color:#e6db74>&#39;**/dashboard&#39;</span>);
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// Now authenticated — do your work
+</span></span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>data</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>evaluate</span>(() <span style=color:#f92672>=&gt;</span> {
+</span></span><span style=display:flex><span>        <span style=color:#75715e>// Extract data from the authenticated page
+</span></span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> document.<span style=color:#a6e22e>querySelector</span>(<span style=color:#e6db74>&#39;.dashboard-stats&#39;</span>)<span style=color:#f92672>?</span>.<span style=color:#a6e22e>textContent</span>;
+</span></span><span style=display:flex><span>    });
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>context</span>.<span style=color:#a6e22e>close</span>();
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> <span style=color:#a6e22e>data</span>;
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></td></tr></table></div></div><h2 id=use-case-2-workflow-automation>Use Case 2: Workflow Automation</h2><p>Automate repetitive web workflows that don&rsquo;t have APIs:</p><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">30
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">31
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">32
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">33
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">34
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">35
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">36
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">37
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">38
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">39
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">40
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">41
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">42
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">43
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-typescript data-lang=typescript><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>function</span> <span style=color:#a6e22e>submitExpenseReport</span>(<span style=color:#a6e22e>expenses</span>: <span style=color:#66d9ef>Expense</span>[]) {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>browser</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>chromium</span>.<span style=color:#a6e22e>launch</span>({ <span style=color:#a6e22e>headless</span>: <span style=color:#66d9ef>true</span> });
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>page</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>browser</span>.<span style=color:#a6e22e>newPage</span>();
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// Login to expense system
+</span></span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#66d9ef>goto</span>(<span style=color:#e6db74>&#39;https://expenses.company.com&#39;</span>);
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>fill</span>(<span style=color:#e6db74>&#39;#username&#39;</span>, <span style=color:#a6e22e>process</span>.<span style=color:#a6e22e>env</span>.<span style=color:#a6e22e>EXPENSE_USER</span><span style=color:#f92672>!</span>);
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>fill</span>(<span style=color:#e6db74>&#39;#password&#39;</span>, <span style=color:#a6e22e>process</span>.<span style=color:#a6e22e>env</span>.<span style=color:#a6e22e>EXPENSE_PASS</span><span style=color:#f92672>!</span>);
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>click</span>(<span style=color:#e6db74>&#39;#login-btn&#39;</span>);
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>waitForURL</span>(<span style=color:#e6db74>&#39;**/dashboard&#39;</span>);
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// Create new report
+</span></span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>click</span>(<span style=color:#e6db74>&#39;text=New Expense Report&#39;</span>);
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>fill</span>(<span style=color:#e6db74>&#39;#report-title&#39;</span>, 
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>`Expenses </span><span style=color:#e6db74>${</span><span style=color:#66d9ef>new</span> Date().<span style=color:#a6e22e>toISOString</span>().<span style=color:#a6e22e>slice</span>(<span style=color:#ae81ff>0</span>, <span style=color:#ae81ff>7</span>)<span style=color:#e6db74>}</span><span style=color:#e6db74>`</span>);
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> (<span style=color:#66d9ef>const</span> <span style=color:#a6e22e>expense</span> <span style=color:#66d9ef>of</span> <span style=color:#a6e22e>expenses</span>) {
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>click</span>(<span style=color:#e6db74>&#39;text=Add Expense&#39;</span>);
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>fill</span>(<span style=color:#e6db74>&#39;#amount&#39;</span>, <span style=color:#a6e22e>expense</span>.<span style=color:#a6e22e>amount</span>.<span style=color:#a6e22e>toString</span>());
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>fill</span>(<span style=color:#e6db74>&#39;#description&#39;</span>, <span style=color:#a6e22e>expense</span>.<span style=color:#a6e22e>description</span>);
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>selectOption</span>(<span style=color:#e6db74>&#39;#category&#39;</span>, <span style=color:#a6e22e>expense</span>.<span style=color:#a6e22e>category</span>);
+</span></span><span style=display:flex><span>        
+</span></span><span style=display:flex><span>        <span style=color:#75715e>// Upload receipt
+</span></span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> (<span style=color:#a6e22e>expense</span>.<span style=color:#a6e22e>receiptPath</span>) {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>fileInput</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>locator</span>(<span style=color:#e6db74>&#39;input[type=&#34;file&#34;]&#39;</span>);
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>fileInput</span>.<span style=color:#a6e22e>setInputFiles</span>(<span style=color:#a6e22e>expense</span>.<span style=color:#a6e22e>receiptPath</span>);
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>        
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>click</span>(<span style=color:#e6db74>&#39;text=Save Expense&#39;</span>);
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>waitForSelector</span>(<span style=color:#e6db74>&#39;.expense-saved-toast&#39;</span>);
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// Submit the report
+</span></span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>click</span>(<span style=color:#e6db74>&#39;text=Submit for Approval&#39;</span>);
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>click</span>(<span style=color:#e6db74>&#39;text=Confirm&#39;</span>);
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>confirmationId</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>
+</span></span><span style=display:flex><span>        .<span style=color:#a6e22e>locator</span>(<span style=color:#e6db74>&#39;.confirmation-id&#39;</span>)
+</span></span><span style=display:flex><span>        .<span style=color:#a6e22e>textContent</span>();
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>browser</span>.<span style=color:#a6e22e>close</span>();
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> <span style=color:#a6e22e>confirmationId</span>;
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></td></tr></table></div></div><h2 id=use-case-3-visual-monitoring-and-alerts>Use Case 3: Visual Monitoring and Alerts</h2><p>Monitor web pages for visual changes:</p><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">30
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">31
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">32
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">33
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">34
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">35
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">36
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">37
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">38
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">39
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">40
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">41
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">42
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">43
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">44
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">45
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">46
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">47
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">48
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">49
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">50
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">51
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">52
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">53
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">54
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">55
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-typescript data-lang=typescript><span style=display:flex><span><span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>chromium</span> } <span style=color:#66d9ef>from</span> <span style=color:#e6db74>&#39;playwright&#39;</span>;
+</span></span><span style=display:flex><span><span style=color:#66d9ef>import</span> <span style=color:#f92672>*</span> <span style=color:#66d9ef>as</span> <span style=color:#a6e22e>fs</span> <span style=color:#66d9ef>from</span> <span style=color:#e6db74>&#39;fs&#39;</span>;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>function</span> <span style=color:#a6e22e>monitorPageChanges</span>(<span style=color:#a6e22e>url</span>: <span style=color:#66d9ef>string</span>, <span style=color:#a6e22e>name</span>: <span style=color:#66d9ef>string</span>) {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>browser</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>chromium</span>.<span style=color:#a6e22e>launch</span>();
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>page</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>browser</span>.<span style=color:#a6e22e>newPage</span>();
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#66d9ef>goto</span>(<span style=color:#a6e22e>url</span>, { <span style=color:#a6e22e>waitUntil</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;networkidle&#39;</span> });
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>screenshotPath</span> <span style=color:#f92672>=</span> <span style=color:#e6db74>`./monitoring/</span><span style=color:#e6db74>${</span><span style=color:#a6e22e>name</span><span style=color:#e6db74>}</span><span style=color:#e6db74>-latest.png`</span>;
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>previousPath</span> <span style=color:#f92672>=</span> <span style=color:#e6db74>`./monitoring/</span><span style=color:#e6db74>${</span><span style=color:#a6e22e>name</span><span style=color:#e6db74>}</span><span style=color:#e6db74>-previous.png`</span>;
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// Save previous screenshot for comparison
+</span></span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> (<span style=color:#a6e22e>fs</span>.<span style=color:#a6e22e>existsSync</span>(<span style=color:#a6e22e>screenshotPath</span>)) {
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>fs</span>.<span style=color:#a6e22e>copyFileSync</span>(<span style=color:#a6e22e>screenshotPath</span>, <span style=color:#a6e22e>previousPath</span>);
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// Take new screenshot
+</span></span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>screenshot</span>({ 
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>path</span>: <span style=color:#66d9ef>screenshotPath</span>, 
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>fullPage</span>: <span style=color:#66d9ef>true</span> 
+</span></span><span style=display:flex><span>    });
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// Check for specific content changes
+</span></span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>currentContent</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>evaluate</span>(() <span style=color:#f92672>=&gt;</span> 
+</span></span><span style=display:flex><span>        document.<span style=color:#a6e22e>body</span>.<span style=color:#a6e22e>innerText</span>
+</span></span><span style=display:flex><span>    );
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>hashPath</span> <span style=color:#f92672>=</span> <span style=color:#e6db74>`./monitoring/</span><span style=color:#e6db74>${</span><span style=color:#a6e22e>name</span><span style=color:#e6db74>}</span><span style=color:#e6db74>-hash.txt`</span>;
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>currentHash</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>Buffer</span>
+</span></span><span style=display:flex><span>        .<span style=color:#66d9ef>from</span>(<span style=color:#a6e22e>currentContent</span>)
+</span></span><span style=display:flex><span>        .<span style=color:#a6e22e>toString</span>(<span style=color:#e6db74>&#39;base64&#39;</span>)
+</span></span><span style=display:flex><span>        .<span style=color:#a6e22e>slice</span>(<span style=color:#ae81ff>0</span>, <span style=color:#ae81ff>32</span>);
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> <span style=color:#a6e22e>changed</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>false</span>;
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> (<span style=color:#a6e22e>fs</span>.<span style=color:#a6e22e>existsSync</span>(<span style=color:#a6e22e>hashPath</span>)) {
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>previousHash</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>fs</span>.<span style=color:#a6e22e>readFileSync</span>(<span style=color:#a6e22e>hashPath</span>, <span style=color:#e6db74>&#39;utf-8&#39;</span>);
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>changed</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>currentHash</span> <span style=color:#f92672>!==</span> <span style=color:#a6e22e>previousHash</span>;
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>fs</span>.<span style=color:#a6e22e>writeFileSync</span>(<span style=color:#a6e22e>hashPath</span>, <span style=color:#a6e22e>currentHash</span>);
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>browser</span>.<span style=color:#a6e22e>close</span>();
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> (<span style=color:#a6e22e>changed</span>) {
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>console</span>.<span style=color:#a6e22e>log</span>(<span style=color:#e6db74>`⚠️ Change detected on </span><span style=color:#e6db74>${</span><span style=color:#a6e22e>name</span><span style=color:#e6db74>}</span><span style=color:#e6db74>!`</span>);
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>sendAlert</span>(<span style=color:#a6e22e>name</span>, <span style=color:#a6e22e>url</span>);
+</span></span><span style=display:flex><span>    } <span style=color:#66d9ef>else</span> {
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>console</span>.<span style=color:#a6e22e>log</span>(<span style=color:#e6db74>`✅ No changes on </span><span style=color:#e6db74>${</span><span style=color:#a6e22e>name</span><span style=color:#e6db74>}</span><span style=color:#e6db74>`</span>);
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// Monitor competitor pricing pages, status pages, etc.
+</span></span></span><span style=display:flex><span><span style=color:#66d9ef>await</span> <span style=color:#a6e22e>monitorPageChanges</span>(
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#39;https://competitor.com/pricing&#39;</span>, 
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#39;competitor-pricing&#39;</span>
+</span></span><span style=display:flex><span>);
+</span></span></code></pre></td></tr></table></div></div><h2 id=use-case-4-pdf-generation-from-web-content>Use Case 4: PDF Generation from Web Content</h2><p>Generate professional PDFs from HTML/web content:</p><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">30
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">31
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">32
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">33
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">34
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">35
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">36
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">37
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">38
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">39
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">40
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">41
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-typescript data-lang=typescript><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>function</span> <span style=color:#a6e22e>generateInvoicePdf</span>(<span style=color:#a6e22e>invoiceData</span>: <span style=color:#66d9ef>Invoice</span>) {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>browser</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>chromium</span>.<span style=color:#a6e22e>launch</span>();
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>page</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>browser</span>.<span style=color:#a6e22e>newPage</span>();
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// Load the invoice template
+</span></span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#66d9ef>goto</span>(<span style=color:#e6db74>&#39;file:///templates/invoice.html&#39;</span>);
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// Populate the template
+</span></span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>evaluate</span>((<span style=color:#a6e22e>data</span>) <span style=color:#f92672>=&gt;</span> {
+</span></span><span style=display:flex><span>        document.<span style=color:#a6e22e>getElementById</span>(<span style=color:#e6db74>&#39;invoice-number&#39;</span>)<span style=color:#f92672>!</span>
+</span></span><span style=display:flex><span>            .<span style=color:#a6e22e>textContent</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>data</span>.<span style=color:#66d9ef>number</span>;
+</span></span><span style=display:flex><span>        document.<span style=color:#a6e22e>getElementById</span>(<span style=color:#e6db74>&#39;client-name&#39;</span>)<span style=color:#f92672>!</span>
+</span></span><span style=display:flex><span>            .<span style=color:#a6e22e>textContent</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>data</span>.<span style=color:#a6e22e>clientName</span>;
+</span></span><span style=display:flex><span>        document.<span style=color:#a6e22e>getElementById</span>(<span style=color:#e6db74>&#39;total&#39;</span>)<span style=color:#f92672>!</span>
+</span></span><span style=display:flex><span>            .<span style=color:#a6e22e>textContent</span> <span style=color:#f92672>=</span> <span style=color:#e6db74>`$</span><span style=color:#e6db74>${</span><span style=color:#a6e22e>data</span>.<span style=color:#a6e22e>total</span>.<span style=color:#a6e22e>toFixed</span>(<span style=color:#ae81ff>2</span>)<span style=color:#e6db74>}</span><span style=color:#e6db74>`</span>;
+</span></span><span style=display:flex><span>        
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>tbody</span> <span style=color:#f92672>=</span> document.<span style=color:#a6e22e>getElementById</span>(<span style=color:#e6db74>&#39;line-items&#39;</span>)<span style=color:#f92672>!</span>;
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>for</span> (<span style=color:#66d9ef>const</span> <span style=color:#a6e22e>item</span> <span style=color:#66d9ef>of</span> <span style=color:#a6e22e>data</span>.<span style=color:#a6e22e>items</span>) {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>row</span> <span style=color:#f92672>=</span> document.<span style=color:#a6e22e>createElement</span>(<span style=color:#e6db74>&#39;tr&#39;</span>);
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>row</span>.<span style=color:#a6e22e>innerHTML</span> <span style=color:#f92672>=</span> <span style=color:#e6db74>`
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>                &lt;td&gt;</span><span style=color:#e6db74>${</span><span style=color:#a6e22e>item</span>.<span style=color:#a6e22e>description</span><span style=color:#e6db74>}</span><span style=color:#e6db74>&lt;/td&gt;
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>                &lt;td&gt;</span><span style=color:#e6db74>${</span><span style=color:#a6e22e>item</span>.<span style=color:#a6e22e>quantity</span><span style=color:#e6db74>}</span><span style=color:#e6db74>&lt;/td&gt;
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>                &lt;td&gt;$</span><span style=color:#e6db74>${</span><span style=color:#a6e22e>item</span>.<span style=color:#a6e22e>unitPrice</span>.<span style=color:#a6e22e>toFixed</span>(<span style=color:#ae81ff>2</span>)<span style=color:#e6db74>}</span><span style=color:#e6db74>&lt;/td&gt;
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>                &lt;td&gt;$</span><span style=color:#e6db74>${</span>(<span style=color:#a6e22e>item</span>.<span style=color:#a6e22e>quantity</span> <span style=color:#f92672>*</span> <span style=color:#a6e22e>item</span>.<span style=color:#a6e22e>unitPrice</span>).<span style=color:#a6e22e>toFixed</span>(<span style=color:#ae81ff>2</span>)<span style=color:#e6db74>}</span><span style=color:#e6db74>&lt;/td&gt;
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>            `</span>;
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>tbody</span>.<span style=color:#a6e22e>appendChild</span>(<span style=color:#a6e22e>row</span>);
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>    }, <span style=color:#a6e22e>invoiceData</span>);
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// Generate PDF
+</span></span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>pdfPath</span> <span style=color:#f92672>=</span> <span style=color:#e6db74>`./invoices/</span><span style=color:#e6db74>${</span><span style=color:#a6e22e>invoiceData</span>.<span style=color:#66d9ef>number</span><span style=color:#e6db74>}</span><span style=color:#e6db74>.pdf`</span>;
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>pdf</span>({
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>path</span>: <span style=color:#66d9ef>pdfPath</span>,
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>format</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;A4&#39;</span>,
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>margin</span><span style=color:#f92672>:</span> { <span style=color:#a6e22e>top</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;1cm&#39;</span>, <span style=color:#a6e22e>bottom</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;1cm&#39;</span>, <span style=color:#a6e22e>left</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;1cm&#39;</span>, <span style=color:#a6e22e>right</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;1cm&#39;</span> },
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>printBackground</span>: <span style=color:#66d9ef>true</span>
+</span></span><span style=display:flex><span>    });
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>browser</span>.<span style=color:#a6e22e>close</span>();
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> <span style=color:#a6e22e>pdfPath</span>;
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></td></tr></table></div></div><h2 id=use-case-5-api-testing-with-browser-context>Use Case 5: API Testing with Browser Context</h2><p>Some APIs require browser cookies or CSRF tokens. Playwright can handle the authentication dance:</p><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-typescript data-lang=typescript><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>function</span> <span style=color:#a6e22e>callAuthenticatedApi</span>(<span style=color:#a6e22e>endpoint</span>: <span style=color:#66d9ef>string</span>) {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>browser</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>chromium</span>.<span style=color:#a6e22e>launch</span>();
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>context</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>browser</span>.<span style=color:#a6e22e>newContext</span>();
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>page</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>context</span>.<span style=color:#a6e22e>newPage</span>();
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// Authenticate through the browser
+</span></span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#66d9ef>goto</span>(<span style=color:#e6db74>&#39;https://app.example.com/login&#39;</span>);
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>fill</span>(<span style=color:#e6db74>&#39;#email&#39;</span>, <span style=color:#a6e22e>process</span>.<span style=color:#a6e22e>env</span>.<span style=color:#a6e22e>EMAIL</span><span style=color:#f92672>!</span>);
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>fill</span>(<span style=color:#e6db74>&#39;#password&#39;</span>, <span style=color:#a6e22e>process</span>.<span style=color:#a6e22e>env</span>.<span style=color:#a6e22e>PASSWORD</span><span style=color:#f92672>!</span>);
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>click</span>(<span style=color:#e6db74>&#39;button[type=&#34;submit&#34;]&#39;</span>);
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>waitForURL</span>(<span style=color:#e6db74>&#39;**/dashboard&#39;</span>);
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// Now use the authenticated context for API calls
+</span></span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>response</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>context</span>.<span style=color:#a6e22e>request</span>.<span style=color:#66d9ef>get</span>(
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>`https://api.example.com</span><span style=color:#e6db74>${</span><span style=color:#a6e22e>endpoint</span><span style=color:#e6db74>}</span><span style=color:#e6db74>`</span>,
+</span></span><span style=display:flex><span>        {
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>headers</span><span style=color:#f92672>:</span> {
+</span></span><span style=display:flex><span>                <span style=color:#e6db74>&#39;Accept&#39;</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;application/json&#39;</span>
+</span></span><span style=display:flex><span>            }
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>    );
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>data</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>response</span>.<span style=color:#a6e22e>json</span>();
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>browser</span>.<span style=color:#a6e22e>close</span>();
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> <span style=color:#a6e22e>data</span>;
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></td></tr></table></div></div><h2 id=production-tips>Production Tips</h2><h3 id=run-headless-in-docker>Run Headless in Docker</h3><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">8
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-dockerfile data-lang=dockerfile><span style=display:flex><span><span style=color:#66d9ef>FROM</span> <span style=color:#e6db74>mcr.microsoft.com/playwright:v1.50.0-noble</span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#66d9ef>WORKDIR</span> <span style=color:#e6db74>/app</span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#66d9ef>COPY</span> package*.json ./<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#66d9ef>RUN</span> npm ci<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#66d9ef>COPY</span> . .<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#66d9ef>CMD</span> [<span style=color:#e6db74>&#34;node&#34;</span>, <span style=color:#e6db74>&#34;automation.js&#34;</span>]<span style=color:#960050;background-color:#1e0010>
+</span></span></span></code></pre></td></tr></table></div></div><h3 id=handle-flakiness>Handle Flakiness</h3><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-typescript data-lang=typescript><span style=display:flex><span><span style=color:#75715e>// Use built-in retry and timeout mechanisms
+</span></span></span><span style=display:flex><span><span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>click</span>(<span style=color:#e6db74>&#39;button.submit&#39;</span>, { <span style=color:#a6e22e>timeout</span>: <span style=color:#66d9ef>10_000</span> });
+</span></span><span style=display:flex><span><span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>waitForResponse</span>(
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>resp</span> <span style=color:#f92672>=&gt;</span> <span style=color:#a6e22e>resp</span>.<span style=color:#a6e22e>url</span>().<span style=color:#a6e22e>includes</span>(<span style=color:#e6db74>&#39;/api/&#39;</span>) <span style=color:#f92672>&amp;&amp;</span> <span style=color:#a6e22e>resp</span>.<span style=color:#a6e22e>status</span>() <span style=color:#f92672>===</span> <span style=color:#ae81ff>200</span>,
+</span></span><span style=display:flex><span>    { <span style=color:#a6e22e>timeout</span>: <span style=color:#66d9ef>30_000</span> }
+</span></span><span style=display:flex><span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// Retry the entire operation on failure
+</span></span></span><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>function</span> <span style=color:#a6e22e>withRetry</span>&lt;<span style=color:#f92672>T</span>&gt;(
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>fn</span><span style=color:#f92672>:</span> () <span style=color:#f92672>=&gt;</span> <span style=color:#a6e22e>Promise</span>&lt;<span style=color:#f92672>T</span>&gt;, 
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>maxRetries</span> <span style=color:#f92672>=</span> <span style=color:#ae81ff>3</span>
+</span></span><span style=display:flex><span>)<span style=color:#f92672>:</span> <span style=color:#a6e22e>Promise</span>&lt;<span style=color:#f92672>T</span>&gt; {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> (<span style=color:#66d9ef>let</span> <span style=color:#a6e22e>i</span> <span style=color:#f92672>=</span> <span style=color:#ae81ff>0</span>; <span style=color:#a6e22e>i</span> <span style=color:#f92672>&lt;</span> <span style=color:#a6e22e>maxRetries</span>; <span style=color:#a6e22e>i</span><span style=color:#f92672>++</span>) {
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>try</span> {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>fn</span>();
+</span></span><span style=display:flex><span>        } <span style=color:#66d9ef>catch</span> (<span style=color:#a6e22e>error</span>) {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>if</span> (<span style=color:#a6e22e>i</span> <span style=color:#f92672>===</span> <span style=color:#a6e22e>maxRetries</span> <span style=color:#f92672>-</span> <span style=color:#ae81ff>1</span>) <span style=color:#66d9ef>throw</span> <span style=color:#a6e22e>error</span>;
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>console</span>.<span style=color:#a6e22e>log</span>(<span style=color:#e6db74>`Retry </span><span style=color:#e6db74>${</span><span style=color:#a6e22e>i</span> <span style=color:#f92672>+</span> <span style=color:#ae81ff>1</span><span style=color:#e6db74>}</span><span style=color:#e6db74>/</span><span style=color:#e6db74>${</span><span style=color:#a6e22e>maxRetries</span><span style=color:#e6db74>}</span><span style=color:#e6db74>...`</span>);
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>await</span> <span style=color:#66d9ef>new</span> <span style=color:#a6e22e>Promise</span>(<span style=color:#a6e22e>r</span> <span style=color:#f92672>=&gt;</span> <span style=color:#a6e22e>setTimeout</span>(<span style=color:#a6e22e>r</span>, <span style=color:#ae81ff>2000</span> <span style=color:#f92672>*</span> (<span style=color:#a6e22e>i</span> <span style=color:#f92672>+</span> <span style=color:#ae81ff>1</span>)));
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>throw</span> <span style=color:#66d9ef>new</span> Error(<span style=color:#e6db74>&#34;Unreachable&#34;</span>);
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></td></tr></table></div></div><h3 id=be-a-good-citizen>Be a Good Citizen</h3><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-typescript data-lang=typescript><span style=display:flex><span><span style=color:#75715e>// Add delays between actions to avoid hammering servers
+</span></span></span><span style=display:flex><span><span style=color:#66d9ef>await</span> <span style=color:#a6e22e>page</span>.<span style=color:#a6e22e>waitForTimeout</span>(<span style=color:#ae81ff>1000</span> <span style=color:#f92672>+</span> Math.<span style=color:#a6e22e>random</span>() <span style=color:#f92672>*</span> <span style=color:#ae81ff>2000</span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// Set a reasonable user agent
+</span></span></span><span style=display:flex><span><span style=color:#66d9ef>const</span> <span style=color:#a6e22e>context</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>browser</span>.<span style=color:#a6e22e>newContext</span>({
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>userAgent</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;MyBot/1.0 (automation; contact@example.com)&#39;</span>
+</span></span><span style=display:flex><span>});
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// Respect robots.txt (check before scraping)
+</span></span></span><span style=display:flex><span><span style=color:#75715e>// Honor rate limits
+</span></span></span><span style=display:flex><span><span style=color:#75715e>// Cache results to minimize requests
+</span></span></span></code></pre></td></tr></table></div></div><h2 id=the-bottom-line>The Bottom Line</h2><p>Playwright is a general-purpose browser automation platform that happens to be excellent at testing. Once you start seeing the browser as a programmable interface to the web, automation opportunities appear everywhere.</p><p>Start with one repetitive web task you do manually. Automate it with Playwright. Then look for the next one. Before you know it, you&rsquo;ll have reclaimed hours every week.</p><hr><p><em>Content Empire explores developer tools for maximum productivity. Follow for practical automation guides.</em></p></div><footer class=post-footer><p><strong>Enjoyed this article?</strong> Follow Content Empire for more developer content.</p></footer></article></main><footer class=footer><div class=container><p>&copy; 2026 Content Empire. Build. Publish. Dominate.</p></div></footer></body></html>

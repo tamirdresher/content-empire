@@ -1,0 +1,867 @@
+<!doctype html><html lang=en><head><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Module 4: Building Your First AI Agent | Content Empire</title><meta name=description content="Go beyond chat assistants and build an autonomous AI agent that can read codebases, find bugs, write fixes, and verify them — all without human intervention."><link rel=stylesheet href=https://tamirdresher.github.io/content-empire/css/style.css><link rel=preconnect href=https://fonts.googleapis.com><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono&display=swap" rel=stylesheet></head><body><nav class=navbar><div class=container><a href=https://tamirdresher.github.io/content-empire/ class=logo>⚡ Content Empire</a><div class=nav-links><a href=https://tamirdresher.github.io/content-empire/posts/>Articles</a>
+<a href=https://tamirdresher.github.io/content-empire/courses/>Courses</a>
+<a href=https://tamirdresher.github.io/content-empire/pages/about/>About</a></div></div></nav><main class=container><article class=post-single><header class=post-header><h1>Module 4: Building Your First AI Agent</h1><div class=post-meta><time>July 23, 2025</time>
+· By The Content Empire Team
+· 12 min read</div><div class=post-tags><span class=tag>AI</span> <span class=tag>course</span> <span class=tag>agents</span> <span class=tag>development</span></div></header><div class=post-content><h1 id=module-4-building-your-first-ai-agent>Module 4: Building Your First AI Agent</h1><h2 id=learning-objectives>Learning Objectives</h2><p>By the end of this module, you will:</p><ul><li>Understand the core agent loop and how it differs from chat assistants</li><li>Implement tool use and function calling for code manipulation</li><li>Build a complete bug-fixing agent from scratch</li><li>Handle agent errors, loops, and safety guardrails</li><li>Deploy your agent as a command-line tool</li></ul><h2 id=41-what-makes-an-agent-different-from-a-chat>4.1 What Makes an Agent Different from a Chat?</h2><p>The distinction is critical:</p><table><thead><tr><th></th><th>Chat Assistant</th><th>AI Agent</th></tr></thead><tbody><tr><td><strong>Interaction</strong></td><td>Human asks, AI responds</td><td>AI plans and executes autonomously</td></tr><tr><td><strong>Tools</strong></td><td>None (text only)</td><td>File system, terminal, APIs, browser</td></tr><tr><td><strong>Iteration</strong></td><td>One-shot response</td><td>Loop until task is complete</td></tr><tr><td><strong>Verification</strong></td><td>Human checks output</td><td>Agent verifies its own work</td></tr><tr><td><strong>Context</strong></td><td>Conversation history</td><td>Conversation + environment state</td></tr></tbody></table><p>A chat assistant is like calling a consultant and asking for advice. An agent is like hiring a contractor who shows up, does the work, and verifies it&rsquo;s correct.</p><h3 id=the-agent-loop>The Agent Loop</h3><p>Every AI agent follows the same fundamental loop:</p><pre tabindex=0><code>┌─────────────────────────────────────────┐
+│                                         │
+│    ┌──────────┐                         │
+│    │ OBSERVE  │ ← Read files, run       │
+│    │          │   commands, check state  │
+│    └────┬─────┘                         │
+│         │                               │
+│    ┌────▼─────┐                         │
+│    │  THINK   │ ← Analyze observations, │
+│    │          │   plan next action       │
+│    └────┬─────┘                         │
+│         │                               │
+│    ┌────▼─────┐                         │
+│    │   ACT    │ ← Modify files, run     │
+│    │          │   tests, make changes   │
+│    └────┬─────┘                         │
+│         │                               │
+│    ┌────▼─────┐                         │
+│    │ EVALUATE │ ← Did the action work?  │
+│    │          │   Is the task complete?  │
+│    └────┬─────┘                         │
+│         │                               │
+│    No ──┤── Yes → DONE                  │
+│         │                               │
+└─────────┘ (loop back to OBSERVE)        │
+                                          │
+     Max iterations reached → STOP        │
+──────────────────────────────────────────┘
+</code></pre><h2 id=42-the-tool-system>4.2 The Tool System</h2><p>Agents need tools to interact with the world. Let&rsquo;s define a clean tool interface:</p><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-typescript data-lang=typescript><span style=display:flex><span><span style=color:#75715e>// tools/types.ts
+</span></span></span><span style=display:flex><span><span style=color:#66d9ef>interface</span> <span style=color:#a6e22e>Tool</span> {
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>name</span>: <span style=color:#66d9ef>string</span>;
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>description</span>: <span style=color:#66d9ef>string</span>;
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>parameters</span>: <span style=color:#66d9ef>Record</span>&lt;<span style=color:#f92672>string</span>, <span style=color:#a6e22e>ParameterDef</span>&gt;;
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>execute</span><span style=color:#f92672>:</span> (<span style=color:#a6e22e>params</span>: <span style=color:#66d9ef>Record</span>&lt;<span style=color:#f92672>string</span>, <span style=color:#a6e22e>any</span>&gt;) <span style=color:#f92672>=&gt;</span> <span style=color:#a6e22e>Promise</span>&lt;<span style=color:#f92672>ToolResult</span>&gt;;
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>interface</span> <span style=color:#a6e22e>ParameterDef</span> {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>type</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;string&#39;</span> <span style=color:#f92672>|</span> <span style=color:#e6db74>&#39;number&#39;</span> <span style=color:#f92672>|</span> <span style=color:#e6db74>&#39;boolean&#39;</span>;
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>description</span>: <span style=color:#66d9ef>string</span>;
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>required</span>: <span style=color:#66d9ef>boolean</span>;
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>interface</span> <span style=color:#a6e22e>ToolResult</span> {
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>success</span>: <span style=color:#66d9ef>boolean</span>;
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>output</span>: <span style=color:#66d9ef>string</span>;
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>error?</span>: <span style=color:#66d9ef>string</span>;
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></td></tr></table></div></div><h3 id=essential-tools-for-a-code-agent>Essential Tools for a Code Agent</h3><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">  1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">  2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">  3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">  4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">  5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">  6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">  7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">  8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">  9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 28
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 29
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 30
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 31
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 32
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 33
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 34
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 35
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 36
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 37
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 38
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 39
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 40
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 41
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 42
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 43
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 44
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 45
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 46
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 47
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 48
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 49
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 50
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 51
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 52
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 53
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 54
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 55
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 56
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 57
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 58
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 59
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 60
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 61
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 62
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 63
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 64
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 65
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 66
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 67
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 68
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 69
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 70
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 71
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 72
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 73
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 74
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 75
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 76
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 77
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 78
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 79
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 80
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 81
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 82
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 83
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 84
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 85
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 86
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 87
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 88
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 89
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 90
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 91
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 92
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 93
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 94
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 95
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 96
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 97
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 98
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 99
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">100
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">101
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">102
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">103
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">104
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">105
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">106
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">107
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">108
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">109
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">110
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">111
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">112
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">113
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">114
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">115
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">116
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">117
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">118
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">119
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">120
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">121
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">122
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">123
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">124
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">125
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">126
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">127
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">128
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">129
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">130
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">131
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">132
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">133
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">134
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">135
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">136
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-typescript data-lang=typescript><span style=display:flex><span><span style=color:#75715e>// tools/read-file.ts
+</span></span></span><span style=display:flex><span><span style=color:#66d9ef>const</span> <span style=color:#a6e22e>readFileTool</span>: <span style=color:#66d9ef>Tool</span> <span style=color:#f92672>=</span> {
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>name</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;read_file&#39;</span>,
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>description</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;Read the contents of a file at the given path&#39;</span>,
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>parameters</span><span style=color:#f92672>:</span> {
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>path</span><span style=color:#f92672>:</span> {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>type</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;string&#39;</span>,
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>description</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;Relative file path to read&#39;</span>,
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>required</span>: <span style=color:#66d9ef>true</span>
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>    },
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>async</span> <span style=color:#a6e22e>execute</span>({ <span style=color:#a6e22e>path</span> }) {
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>try</span> {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>content</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>fs</span>.<span style=color:#a6e22e>readFile</span>(<span style=color:#a6e22e>path</span>, <span style=color:#e6db74>&#39;utf-8&#39;</span>);
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>return</span> { <span style=color:#a6e22e>success</span>: <span style=color:#66d9ef>true</span>, <span style=color:#a6e22e>output</span>: <span style=color:#66d9ef>content</span> };
+</span></span><span style=display:flex><span>        } <span style=color:#66d9ef>catch</span> (<span style=color:#a6e22e>error</span>) {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>return</span> {
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>success</span>: <span style=color:#66d9ef>false</span>,
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>output</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;&#39;</span>,
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>error</span><span style=color:#f92672>:</span> <span style=color:#e6db74>`Cannot read file: </span><span style=color:#e6db74>${</span><span style=color:#a6e22e>error</span>.<span style=color:#a6e22e>message</span><span style=color:#e6db74>}</span><span style=color:#e6db74>`</span>
+</span></span><span style=display:flex><span>            };
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>};
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// tools/write-file.ts
+</span></span></span><span style=display:flex><span><span style=color:#66d9ef>const</span> <span style=color:#a6e22e>writeFileTool</span>: <span style=color:#66d9ef>Tool</span> <span style=color:#f92672>=</span> {
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>name</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;write_file&#39;</span>,
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>description</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;Write content to a file, creating it if needed&#39;</span>,
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>parameters</span><span style=color:#f92672>:</span> {
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>path</span><span style=color:#f92672>:</span> {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>type</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;string&#39;</span>,
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>description</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;File path to write to&#39;</span>,
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>required</span>: <span style=color:#66d9ef>true</span>
+</span></span><span style=display:flex><span>        },
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>content</span><span style=color:#f92672>:</span> {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>type</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;string&#39;</span>,
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>description</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;Content to write&#39;</span>,
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>required</span>: <span style=color:#66d9ef>true</span>
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>    },
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>async</span> <span style=color:#a6e22e>execute</span>({ <span style=color:#a6e22e>path</span>, <span style=color:#a6e22e>content</span> }) {
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>try</span> {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>fs</span>.<span style=color:#a6e22e>mkdir</span>(<span style=color:#a6e22e>dirname</span>(<span style=color:#a6e22e>path</span>), { <span style=color:#a6e22e>recursive</span>: <span style=color:#66d9ef>true</span> });
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>fs</span>.<span style=color:#a6e22e>writeFile</span>(<span style=color:#a6e22e>path</span>, <span style=color:#a6e22e>content</span>, <span style=color:#e6db74>&#39;utf-8&#39;</span>);
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>return</span> { <span style=color:#a6e22e>success</span>: <span style=color:#66d9ef>true</span>, <span style=color:#a6e22e>output</span><span style=color:#f92672>:</span> <span style=color:#e6db74>`Written to </span><span style=color:#e6db74>${</span><span style=color:#a6e22e>path</span><span style=color:#e6db74>}</span><span style=color:#e6db74>`</span> };
+</span></span><span style=display:flex><span>        } <span style=color:#66d9ef>catch</span> (<span style=color:#a6e22e>error</span>) {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>return</span> {
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>success</span>: <span style=color:#66d9ef>false</span>,
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>output</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;&#39;</span>,
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>error</span><span style=color:#f92672>:</span> <span style=color:#e6db74>`Cannot write file: </span><span style=color:#e6db74>${</span><span style=color:#a6e22e>error</span>.<span style=color:#a6e22e>message</span><span style=color:#e6db74>}</span><span style=color:#e6db74>`</span>
+</span></span><span style=display:flex><span>            };
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>};
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// tools/run-command.ts
+</span></span></span><span style=display:flex><span><span style=color:#66d9ef>const</span> <span style=color:#a6e22e>runCommandTool</span>: <span style=color:#66d9ef>Tool</span> <span style=color:#f92672>=</span> {
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>name</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;run_command&#39;</span>,
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>description</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;Run a shell command and return its output&#39;</span>,
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>parameters</span><span style=color:#f92672>:</span> {
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>command</span><span style=color:#f92672>:</span> {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>type</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;string&#39;</span>,
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>description</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;Shell command to execute&#39;</span>,
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>required</span>: <span style=color:#66d9ef>true</span>
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>    },
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>async</span> <span style=color:#a6e22e>execute</span>({ <span style=color:#a6e22e>command</span> }) {
+</span></span><span style=display:flex><span>        <span style=color:#75715e>// Safety: restrict to safe commands
+</span></span></span><span style=display:flex><span>        <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>allowedPrefixes</span> <span style=color:#f92672>=</span> [
+</span></span><span style=display:flex><span>            <span style=color:#e6db74>&#39;npm test&#39;</span>, <span style=color:#e6db74>&#39;npm run&#39;</span>, <span style=color:#e6db74>&#39;npx&#39;</span>,
+</span></span><span style=display:flex><span>            <span style=color:#e6db74>&#39;node&#39;</span>, <span style=color:#e6db74>&#39;cat&#39;</span>, <span style=color:#e6db74>&#39;ls&#39;</span>, <span style=color:#e6db74>&#39;find&#39;</span>, <span style=color:#e6db74>&#39;grep&#39;</span>,
+</span></span><span style=display:flex><span>            <span style=color:#e6db74>&#39;git diff&#39;</span>, <span style=color:#e6db74>&#39;git log&#39;</span>, <span style=color:#e6db74>&#39;git status&#39;</span>
+</span></span><span style=display:flex><span>        ];
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>isAllowed</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>allowedPrefixes</span>.<span style=color:#a6e22e>some</span>(
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>prefix</span> <span style=color:#f92672>=&gt;</span> <span style=color:#a6e22e>command</span>.<span style=color:#a6e22e>startsWith</span>(<span style=color:#a6e22e>prefix</span>)
+</span></span><span style=display:flex><span>        );
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> (<span style=color:#f92672>!</span><span style=color:#a6e22e>isAllowed</span>) {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>return</span> {
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>success</span>: <span style=color:#66d9ef>false</span>,
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>output</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;&#39;</span>,
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>error</span><span style=color:#f92672>:</span> <span style=color:#e6db74>`Command not allowed: </span><span style=color:#e6db74>${</span><span style=color:#a6e22e>command</span><span style=color:#e6db74>}</span><span style=color:#e6db74>`</span>
+</span></span><span style=display:flex><span>            };
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>try</span> {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>output</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>execSync</span>(<span style=color:#a6e22e>command</span>, {
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>encoding</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;utf-8&#39;</span>,
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>timeout</span>: <span style=color:#66d9ef>30_000</span>,
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>maxBuffer</span>: <span style=color:#66d9ef>1024</span> <span style=color:#f92672>*</span> <span style=color:#ae81ff>1024</span>
+</span></span><span style=display:flex><span>            });
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>return</span> { <span style=color:#a6e22e>success</span>: <span style=color:#66d9ef>true</span>, <span style=color:#a6e22e>output</span> };
+</span></span><span style=display:flex><span>        } <span style=color:#66d9ef>catch</span> (<span style=color:#a6e22e>error</span>) {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>return</span> {
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>success</span>: <span style=color:#66d9ef>false</span>,
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>output</span>: <span style=color:#66d9ef>error.stdout</span> <span style=color:#f92672>||</span> <span style=color:#e6db74>&#39;&#39;</span>,
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>error</span>: <span style=color:#66d9ef>error.stderr</span> <span style=color:#f92672>||</span> <span style=color:#a6e22e>error</span>.<span style=color:#a6e22e>message</span>
+</span></span><span style=display:flex><span>            };
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>};
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// tools/search-code.ts
+</span></span></span><span style=display:flex><span><span style=color:#66d9ef>const</span> <span style=color:#a6e22e>searchCodeTool</span>: <span style=color:#66d9ef>Tool</span> <span style=color:#f92672>=</span> {
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>name</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;search_code&#39;</span>,
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>description</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;Search for a pattern across all project files&#39;</span>,
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>parameters</span><span style=color:#f92672>:</span> {
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>pattern</span><span style=color:#f92672>:</span> {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>type</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;string&#39;</span>,
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>description</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;Text or regex pattern to search for&#39;</span>,
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>required</span>: <span style=color:#66d9ef>true</span>
+</span></span><span style=display:flex><span>        },
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>filePattern</span><span style=color:#f92672>:</span> {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>type</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;string&#39;</span>,
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>description</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;File glob pattern (e.g., &#34;*.ts&#34;)&#39;</span>,
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>required</span>: <span style=color:#66d9ef>false</span>
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>    },
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>async</span> <span style=color:#a6e22e>execute</span>({ <span style=color:#a6e22e>pattern</span>, <span style=color:#a6e22e>filePattern</span> }) {
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>glob</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>filePattern</span> <span style=color:#f92672>||</span> <span style=color:#e6db74>&#39;*&#39;</span>;
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>try</span> {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>output</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>execSync</span>(
+</span></span><span style=display:flex><span>                <span style=color:#e6db74>`grep -rn &#34;</span><span style=color:#e6db74>${</span><span style=color:#a6e22e>pattern</span><span style=color:#e6db74>}</span><span style=color:#e6db74>&#34; --include=&#34;</span><span style=color:#e6db74>${</span><span style=color:#a6e22e>glob</span><span style=color:#e6db74>}</span><span style=color:#e6db74>&#34; .`</span>,
+</span></span><span style=display:flex><span>                { <span style=color:#a6e22e>encoding</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;utf-8&#39;</span>, <span style=color:#a6e22e>maxBuffer</span>: <span style=color:#66d9ef>1024</span> <span style=color:#f92672>*</span> <span style=color:#ae81ff>1024</span> }
+</span></span><span style=display:flex><span>            );
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>return</span> { <span style=color:#a6e22e>success</span>: <span style=color:#66d9ef>true</span>, <span style=color:#a6e22e>output</span> };
+</span></span><span style=display:flex><span>        } <span style=color:#66d9ef>catch</span> (<span style=color:#a6e22e>error</span>) {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>if</span> (<span style=color:#a6e22e>error</span>.<span style=color:#a6e22e>status</span> <span style=color:#f92672>===</span> <span style=color:#ae81ff>1</span>) {
+</span></span><span style=display:flex><span>                <span style=color:#66d9ef>return</span> { <span style=color:#a6e22e>success</span>: <span style=color:#66d9ef>true</span>, <span style=color:#a6e22e>output</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;No matches found&#39;</span> };
+</span></span><span style=display:flex><span>            }
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>return</span> { <span style=color:#a6e22e>success</span>: <span style=color:#66d9ef>false</span>, <span style=color:#a6e22e>output</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;&#39;</span>, <span style=color:#a6e22e>error</span>: <span style=color:#66d9ef>error.message</span> };
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>};
+</span></span></code></pre></td></tr></table></div></div><h2 id=43-building-the-agent-core>4.3 Building the Agent Core</h2><p>Now let&rsquo;s build the agent that ties everything together:</p><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">  1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">  2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">  3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">  4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">  5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">  6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">  7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">  8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">  9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 28
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 29
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 30
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 31
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 32
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 33
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 34
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 35
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 36
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 37
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 38
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 39
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 40
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 41
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 42
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 43
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 44
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 45
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 46
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 47
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 48
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 49
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 50
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 51
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 52
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 53
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 54
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 55
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 56
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 57
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 58
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 59
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 60
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 61
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 62
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 63
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 64
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 65
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 66
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 67
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 68
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 69
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 70
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 71
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 72
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 73
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 74
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 75
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 76
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 77
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 78
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 79
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 80
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 81
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 82
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 83
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 84
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 85
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 86
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 87
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 88
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 89
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 90
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 91
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 92
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 93
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 94
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 95
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 96
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 97
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 98
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 99
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">100
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">101
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">102
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">103
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">104
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">105
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">106
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">107
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">108
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">109
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">110
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">111
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">112
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">113
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">114
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">115
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">116
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">117
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">118
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">119
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">120
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">121
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">122
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">123
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">124
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">125
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">126
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">127
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">128
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">129
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">130
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">131
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">132
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">133
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">134
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">135
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">136
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">137
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">138
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">139
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">140
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">141
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">142
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">143
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">144
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">145
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">146
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">147
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">148
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">149
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">150
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">151
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">152
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">153
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">154
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">155
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">156
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">157
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">158
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">159
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">160
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-typescript data-lang=typescript><span style=display:flex><span><span style=color:#75715e>// agent/core.ts
+</span></span></span><span style=display:flex><span><span style=color:#66d9ef>import</span> <span style=color:#a6e22e>Anthropic</span> <span style=color:#66d9ef>from</span> <span style=color:#e6db74>&#39;@anthropic-ai/sdk&#39;</span>;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>class</span> <span style=color:#a6e22e>BugFixAgent</span> {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>private</span> <span style=color:#a6e22e>client</span>: <span style=color:#66d9ef>Anthropic</span>;
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>private</span> <span style=color:#a6e22e>tools</span>: <span style=color:#66d9ef>Tool</span>[];
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>private</span> <span style=color:#a6e22e>maxIterations</span>: <span style=color:#66d9ef>number</span>;
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>private</span> <span style=color:#a6e22e>conversationHistory</span>: <span style=color:#66d9ef>Message</span>[];
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>constructor</span>(<span style=color:#a6e22e>tools</span>: <span style=color:#66d9ef>Tool</span>[], <span style=color:#a6e22e>maxIterations</span> <span style=color:#f92672>=</span> <span style=color:#ae81ff>15</span>) {
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>this</span>.<span style=color:#a6e22e>client</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>new</span> <span style=color:#a6e22e>Anthropic</span>();
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>this</span>.<span style=color:#a6e22e>tools</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>tools</span>;
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>this</span>.<span style=color:#a6e22e>maxIterations</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>maxIterations</span>;
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>this</span>.<span style=color:#a6e22e>conversationHistory</span> <span style=color:#f92672>=</span> [];
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>async</span> <span style=color:#a6e22e>run</span>(<span style=color:#a6e22e>task</span>: <span style=color:#66d9ef>string</span>)<span style=color:#f92672>:</span> <span style=color:#a6e22e>Promise</span>&lt;<span style=color:#f92672>AgentResult</span>&gt; {
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>console</span>.<span style=color:#a6e22e>log</span>(<span style=color:#e6db74>`🤖 Agent starting: </span><span style=color:#e6db74>${</span><span style=color:#a6e22e>task</span><span style=color:#e6db74>}</span><span style=color:#960050;background-color:#1e0010>\</span><span style=color:#e6db74>n`</span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#75715e>// Initial system prompt
+</span></span></span><span style=display:flex><span>        <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>systemPrompt</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>this</span>.<span style=color:#a6e22e>buildSystemPrompt</span>();
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#75715e>// Seed the conversation with the task
+</span></span></span><span style=display:flex><span>        <span style=color:#66d9ef>this</span>.<span style=color:#a6e22e>conversationHistory</span>.<span style=color:#a6e22e>push</span>({
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>role</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;user&#39;</span>,
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>content</span>: <span style=color:#66d9ef>task</span>
+</span></span><span style=display:flex><span>        });
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>for</span> (<span style=color:#66d9ef>let</span> <span style=color:#a6e22e>i</span> <span style=color:#f92672>=</span> <span style=color:#ae81ff>0</span>; <span style=color:#a6e22e>i</span> <span style=color:#f92672>&lt;</span> <span style=color:#66d9ef>this</span>.<span style=color:#a6e22e>maxIterations</span>; <span style=color:#a6e22e>i</span><span style=color:#f92672>++</span>) {
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>console</span>.<span style=color:#a6e22e>log</span>(<span style=color:#e6db74>`</span><span style=color:#960050;background-color:#1e0010>\</span><span style=color:#e6db74>n--- Iteration </span><span style=color:#e6db74>${</span><span style=color:#a6e22e>i</span> <span style=color:#f92672>+</span> <span style=color:#ae81ff>1</span><span style=color:#e6db74>}</span><span style=color:#e6db74>/</span><span style=color:#e6db74>${</span><span style=color:#66d9ef>this</span>.<span style=color:#a6e22e>maxIterations</span><span style=color:#e6db74>}</span><span style=color:#e6db74> ---`</span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>            <span style=color:#75715e>// Ask the AI what to do next
+</span></span></span><span style=display:flex><span>            <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>response</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#66d9ef>this</span>.<span style=color:#a6e22e>client</span>.<span style=color:#a6e22e>messages</span>.<span style=color:#a6e22e>create</span>({
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>model</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;claude-sonnet-4-20250514&#39;</span>,
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>max_tokens</span>: <span style=color:#66d9ef>4096</span>,
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>system</span>: <span style=color:#66d9ef>systemPrompt</span>,
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>tools</span>: <span style=color:#66d9ef>this.tools.map</span>(<span style=color:#a6e22e>t</span> <span style=color:#f92672>=&gt;</span> ({
+</span></span><span style=display:flex><span>                    <span style=color:#a6e22e>name</span>: <span style=color:#66d9ef>t.name</span>,
+</span></span><span style=display:flex><span>                    <span style=color:#a6e22e>description</span>: <span style=color:#66d9ef>t.description</span>,
+</span></span><span style=display:flex><span>                    <span style=color:#a6e22e>input_schema</span><span style=color:#f92672>:</span> {
+</span></span><span style=display:flex><span>                        <span style=color:#66d9ef>type</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;object&#39;</span> <span style=color:#66d9ef>as</span> <span style=color:#66d9ef>const</span>,
+</span></span><span style=display:flex><span>                        <span style=color:#a6e22e>properties</span>: <span style=color:#66d9ef>Object.fromEntries</span>(
+</span></span><span style=display:flex><span>                            Object.<span style=color:#a6e22e>entries</span>(<span style=color:#a6e22e>t</span>.<span style=color:#a6e22e>parameters</span>).<span style=color:#a6e22e>map</span>(
+</span></span><span style=display:flex><span>                                ([<span style=color:#a6e22e>k</span>, <span style=color:#a6e22e>v</span>]) <span style=color:#f92672>=&gt;</span> [<span style=color:#a6e22e>k</span>, {
+</span></span><span style=display:flex><span>                                    <span style=color:#66d9ef>type</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>v</span>.<span style=color:#66d9ef>type</span>,
+</span></span><span style=display:flex><span>                                    <span style=color:#a6e22e>description</span>: <span style=color:#66d9ef>v.description</span>
+</span></span><span style=display:flex><span>                                }]
+</span></span><span style=display:flex><span>                            )
+</span></span><span style=display:flex><span>                        ),
+</span></span><span style=display:flex><span>                        <span style=color:#a6e22e>required</span>: <span style=color:#66d9ef>Object.entries</span>(<span style=color:#a6e22e>t</span>.<span style=color:#a6e22e>parameters</span>)
+</span></span><span style=display:flex><span>                            .<span style=color:#a6e22e>filter</span>(([, <span style=color:#a6e22e>v</span>]) <span style=color:#f92672>=&gt;</span> <span style=color:#a6e22e>v</span>.<span style=color:#a6e22e>required</span>)
+</span></span><span style=display:flex><span>                            .<span style=color:#a6e22e>map</span>(([<span style=color:#a6e22e>k</span>]) <span style=color:#f92672>=&gt;</span> <span style=color:#a6e22e>k</span>)
+</span></span><span style=display:flex><span>                    }
+</span></span><span style=display:flex><span>                })),
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>messages</span>: <span style=color:#66d9ef>this.conversationHistory</span>
+</span></span><span style=display:flex><span>            });
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>            <span style=color:#75715e>// Check if the agent wants to use tools
+</span></span></span><span style=display:flex><span>            <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>toolUseBlocks</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>response</span>.<span style=color:#a6e22e>content</span>.<span style=color:#a6e22e>filter</span>(
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>b</span> <span style=color:#f92672>=&gt;</span> <span style=color:#a6e22e>b</span>.<span style=color:#66d9ef>type</span> <span style=color:#f92672>===</span> <span style=color:#e6db74>&#39;tool_use&#39;</span>
+</span></span><span style=display:flex><span>            );
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>textBlocks</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>response</span>.<span style=color:#a6e22e>content</span>.<span style=color:#a6e22e>filter</span>(
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>b</span> <span style=color:#f92672>=&gt;</span> <span style=color:#a6e22e>b</span>.<span style=color:#66d9ef>type</span> <span style=color:#f92672>===</span> <span style=color:#e6db74>&#39;text&#39;</span>
+</span></span><span style=display:flex><span>            );
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>            <span style=color:#75715e>// Log any text output
+</span></span></span><span style=display:flex><span>            <span style=color:#66d9ef>for</span> (<span style=color:#66d9ef>const</span> <span style=color:#a6e22e>block</span> <span style=color:#66d9ef>of</span> <span style=color:#a6e22e>textBlocks</span>) {
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>console</span>.<span style=color:#a6e22e>log</span>(<span style=color:#e6db74>`💭 </span><span style=color:#e6db74>${</span><span style=color:#a6e22e>block</span>.<span style=color:#a6e22e>text</span><span style=color:#e6db74>}</span><span style=color:#e6db74>`</span>);
+</span></span><span style=display:flex><span>            }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>            <span style=color:#75715e>// If no tool calls, the agent is done
+</span></span></span><span style=display:flex><span>            <span style=color:#66d9ef>if</span> (<span style=color:#a6e22e>toolUseBlocks</span>.<span style=color:#a6e22e>length</span> <span style=color:#f92672>===</span> <span style=color:#ae81ff>0</span>) {
+</span></span><span style=display:flex><span>                <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>finalText</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>textBlocks</span>
+</span></span><span style=display:flex><span>                    .<span style=color:#a6e22e>map</span>(<span style=color:#a6e22e>b</span> <span style=color:#f92672>=&gt;</span> <span style=color:#a6e22e>b</span>.<span style=color:#a6e22e>text</span>)
+</span></span><span style=display:flex><span>                    .<span style=color:#a6e22e>join</span>(<span style=color:#e6db74>&#39;\n&#39;</span>);
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>console</span>.<span style=color:#a6e22e>log</span>(<span style=color:#e6db74>&#39;\n✅ Agent completed&#39;</span>);
+</span></span><span style=display:flex><span>                <span style=color:#66d9ef>return</span> {
+</span></span><span style=display:flex><span>                    <span style=color:#a6e22e>success</span>: <span style=color:#66d9ef>true</span>,
+</span></span><span style=display:flex><span>                    <span style=color:#a6e22e>summary</span>: <span style=color:#66d9ef>finalText</span>,
+</span></span><span style=display:flex><span>                    <span style=color:#a6e22e>iterations</span>: <span style=color:#66d9ef>i</span> <span style=color:#f92672>+</span> <span style=color:#ae81ff>1</span>
+</span></span><span style=display:flex><span>                };
+</span></span><span style=display:flex><span>            }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>            <span style=color:#75715e>// Execute each tool call
+</span></span></span><span style=display:flex><span>            <span style=color:#66d9ef>this</span>.<span style=color:#a6e22e>conversationHistory</span>.<span style=color:#a6e22e>push</span>({
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>role</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;assistant&#39;</span>,
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>content</span>: <span style=color:#66d9ef>response.content</span>
+</span></span><span style=display:flex><span>            });
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>toolResults</span> <span style=color:#f92672>=</span> [];
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>for</span> (<span style=color:#66d9ef>const</span> <span style=color:#a6e22e>toolUse</span> <span style=color:#66d9ef>of</span> <span style=color:#a6e22e>toolUseBlocks</span>) {
+</span></span><span style=display:flex><span>                <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>tool</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>this</span>.<span style=color:#a6e22e>tools</span>.<span style=color:#a6e22e>find</span>(
+</span></span><span style=display:flex><span>                    <span style=color:#a6e22e>t</span> <span style=color:#f92672>=&gt;</span> <span style=color:#a6e22e>t</span>.<span style=color:#a6e22e>name</span> <span style=color:#f92672>===</span> <span style=color:#a6e22e>toolUse</span>.<span style=color:#a6e22e>name</span>
+</span></span><span style=display:flex><span>                );
+</span></span><span style=display:flex><span>                <span style=color:#66d9ef>if</span> (<span style=color:#f92672>!</span><span style=color:#a6e22e>tool</span>) {
+</span></span><span style=display:flex><span>                    <span style=color:#a6e22e>toolResults</span>.<span style=color:#a6e22e>push</span>({
+</span></span><span style=display:flex><span>                        <span style=color:#66d9ef>type</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;tool_result&#39;</span> <span style=color:#66d9ef>as</span> <span style=color:#66d9ef>const</span>,
+</span></span><span style=display:flex><span>                        <span style=color:#a6e22e>tool_use_id</span>: <span style=color:#66d9ef>toolUse.id</span>,
+</span></span><span style=display:flex><span>                        <span style=color:#a6e22e>content</span><span style=color:#f92672>:</span> <span style=color:#e6db74>`Error: Unknown tool </span><span style=color:#e6db74>${</span><span style=color:#a6e22e>toolUse</span>.<span style=color:#a6e22e>name</span><span style=color:#e6db74>}</span><span style=color:#e6db74>`</span>
+</span></span><span style=display:flex><span>                    });
+</span></span><span style=display:flex><span>                    <span style=color:#66d9ef>continue</span>;
+</span></span><span style=display:flex><span>                }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>console</span>.<span style=color:#a6e22e>log</span>(<span style=color:#e6db74>`🔧 </span><span style=color:#e6db74>${</span><span style=color:#a6e22e>toolUse</span>.<span style=color:#a6e22e>name</span><span style=color:#e6db74>}</span><span style=color:#e6db74>(</span><span style=color:#e6db74>${</span>
+</span></span><span style=display:flex><span>                    <span style=color:#a6e22e>JSON</span>.<span style=color:#a6e22e>stringify</span>(<span style=color:#a6e22e>toolUse</span>.<span style=color:#a6e22e>input</span>).<span style=color:#a6e22e>substring</span>(<span style=color:#ae81ff>0</span>, <span style=color:#ae81ff>100</span>)
+</span></span><span style=display:flex><span>                <span style=color:#e6db74>}</span><span style=color:#e6db74>)`</span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>                <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>result</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>tool</span>.<span style=color:#a6e22e>execute</span>(<span style=color:#a6e22e>toolUse</span>.<span style=color:#a6e22e>input</span>);
+</span></span><span style=display:flex><span>                <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>outputPreview</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>result</span>.<span style=color:#a6e22e>output</span>.<span style=color:#a6e22e>substring</span>(<span style=color:#ae81ff>0</span>, <span style=color:#ae81ff>200</span>);
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>console</span>.<span style=color:#a6e22e>log</span>(<span style=color:#e6db74>`   → </span><span style=color:#e6db74>${</span><span style=color:#a6e22e>result</span>.<span style=color:#a6e22e>success</span> <span style=color:#f92672>?</span> <span style=color:#e6db74>&#39;✅&#39;</span> <span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;❌&#39;</span><span style=color:#e6db74>}</span><span style=color:#e6db74> </span><span style=color:#e6db74>${</span>
+</span></span><span style=display:flex><span>                    <span style=color:#a6e22e>outputPreview</span>
+</span></span><span style=display:flex><span>                <span style=color:#e6db74>}${</span><span style=color:#a6e22e>result</span>.<span style=color:#a6e22e>output</span>.<span style=color:#a6e22e>length</span> <span style=color:#f92672>&gt;</span> <span style=color:#ae81ff>200</span> <span style=color:#f92672>?</span> <span style=color:#e6db74>&#39;...&#39;</span> <span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;&#39;</span><span style=color:#e6db74>}</span><span style=color:#e6db74>`</span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>toolResults</span>.<span style=color:#a6e22e>push</span>({
+</span></span><span style=display:flex><span>                    <span style=color:#66d9ef>type</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;tool_result&#39;</span> <span style=color:#66d9ef>as</span> <span style=color:#66d9ef>const</span>,
+</span></span><span style=display:flex><span>                    <span style=color:#a6e22e>tool_use_id</span>: <span style=color:#66d9ef>toolUse.id</span>,
+</span></span><span style=display:flex><span>                    <span style=color:#a6e22e>content</span>: <span style=color:#66d9ef>result.success</span>
+</span></span><span style=display:flex><span>                        <span style=color:#f92672>?</span> <span style=color:#a6e22e>result</span>.<span style=color:#a6e22e>output</span>
+</span></span><span style=display:flex><span>                        <span style=color:#f92672>:</span> <span style=color:#e6db74>`Error: </span><span style=color:#e6db74>${</span><span style=color:#a6e22e>result</span>.<span style=color:#a6e22e>error</span><span style=color:#e6db74>}</span><span style=color:#e6db74>`</span>
+</span></span><span style=display:flex><span>                });
+</span></span><span style=display:flex><span>            }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>this</span>.<span style=color:#a6e22e>conversationHistory</span>.<span style=color:#a6e22e>push</span>({
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>role</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;user&#39;</span>,
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>content</span>: <span style=color:#66d9ef>toolResults</span>
+</span></span><span style=display:flex><span>            });
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>console</span>.<span style=color:#a6e22e>log</span>(<span style=color:#e6db74>&#39;\n⚠️ Agent reached max iterations&#39;</span>);
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> {
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>success</span>: <span style=color:#66d9ef>false</span>,
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>summary</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;Reached maximum iterations without completing&#39;</span>,
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>iterations</span>: <span style=color:#66d9ef>this.maxIterations</span>
+</span></span><span style=display:flex><span>        };
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>private</span> <span style=color:#a6e22e>buildSystemPrompt</span>()<span style=color:#f92672>:</span> <span style=color:#66d9ef>string</span> {
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> <span style=color:#e6db74>`You are a senior software engineer AI agent.
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>Your job is to find and fix bugs in codebases.
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>## How you work:
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>1. OBSERVE: Read relevant files and understand the codebase
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>2. THINK: Analyze the problem and plan your fix
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>3. ACT: Make the necessary code changes
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>4. VERIFY: Run tests to confirm your fix works
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>## Rules:
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- Always read the relevant files before making changes
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- Make minimal, focused changes — don&#39;t refactor unrelated code
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- Run tests after making changes to verify your fix
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- If tests fail after your change, analyze why and fix it
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- If you&#39;re stuck after 3 attempts, explain what you tried
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- Never delete or overwrite test files without reading them first
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>## Safety:
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- Only modify files in the project directory
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- Never run destructive commands (rm -rf, drop database, etc.)
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- If unsure about a change, explain your reasoning first`</span>;
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></td></tr></table></div></div><h2 id=44-running-the-agent>4.4 Running the Agent</h2><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-typescript data-lang=typescript><span style=display:flex><span><span style=color:#75715e>// run-agent.ts
+</span></span></span><span style=display:flex><span><span style=color:#66d9ef>const</span> <span style=color:#a6e22e>tools</span> <span style=color:#f92672>=</span> [
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>readFileTool</span>,
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>writeFileTool</span>,
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>runCommandTool</span>,
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>searchCodeTool</span>
+</span></span><span style=display:flex><span>];
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>const</span> <span style=color:#a6e22e>agent</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>new</span> <span style=color:#a6e22e>BugFixAgent</span>(<span style=color:#a6e22e>tools</span>, <span style=color:#ae81ff>15</span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// Example: Fix a failing test
+</span></span></span><span style=display:flex><span><span style=color:#66d9ef>const</span> <span style=color:#a6e22e>result</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>agent</span>.<span style=color:#a6e22e>run</span>(<span style=color:#e6db74>`
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>The test suite has a failing test. Here&#39;s the error:
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>$ npm test
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>FAIL src/utils/pagination.test.ts
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>  ✕ handles page beyond available data
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>    Expected: []
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>    Received: undefined
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>Please:
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>1. Read the test file to understand what&#39;s expected
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>2. Read the source file to find the bug
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>3. Fix the bug
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>4. Run the tests to verify the fix
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>`</span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>console</span>.<span style=color:#a6e22e>log</span>(<span style=color:#e6db74>&#39;\n📊 Result:&#39;</span>, <span style=color:#a6e22e>result</span>);
+</span></span></code></pre></td></tr></table></div></div><h3 id=example-agent-execution-trace>Example Agent Execution Trace</h3><pre tabindex=0><code>🤖 Agent starting: Fix failing pagination test
+
+--- Iteration 1/15 ---
+💭 Let me start by reading the failing test to understand the expected behavior.
+🔧 read_file({&#34;path&#34;: &#34;src/utils/pagination.test.ts&#34;})
+   → ✅ import { describe, it, expect } from &#39;vitest&#39;...
+
+--- Iteration 2/15 ---
+💭 Now let me read the source file.
+🔧 read_file({&#34;path&#34;: &#34;src/utils/pagination.ts&#34;})
+   → ✅ export function paginate&lt;T&gt;(items: T[], page: number...
+
+--- Iteration 3/15 ---
+💭 I found the bug. When the page is beyond available data,
+   items.slice(start, end) returns an empty array [],
+   but the function wraps it in an object where data could be
+   undefined if totalPages is 0. The issue is that
+   Math.ceil(0 / pageSize) returns 0, and the hasNext
+   calculation is wrong for this edge case. Let me fix it.
+🔧 write_file({&#34;path&#34;: &#34;src/utils/pagination.ts&#34;, &#34;content&#34;: &#34;...&#34;})
+   → ✅ Written to src/utils/pagination.ts
+
+--- Iteration 4/15 ---
+🔧 run_command({&#34;command&#34;: &#34;npm test&#34;})
+   → ✅ PASS src/utils/pagination.test.ts (12 tests passed)
+
+💭 All tests pass now. The bug was in the edge case handling
+   when the requested page exceeds available pages.
+
+✅ Agent completed
+</code></pre><h2 id=45-error-handling-and-safety>4.5 Error Handling and Safety</h2><h3 id=preventing-infinite-loops>Preventing Infinite Loops</h3><p>Agents can get stuck. Add detection:</p><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-typescript data-lang=typescript><span style=display:flex><span><span style=color:#66d9ef>class</span> <span style=color:#a6e22e>LoopDetector</span> {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>private</span> <span style=color:#a6e22e>actions</span>: <span style=color:#66d9ef>string</span>[] <span style=color:#f92672>=</span> [];
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>private</span> <span style=color:#a6e22e>maxRepeats</span> <span style=color:#f92672>=</span> <span style=color:#ae81ff>3</span>;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>recordAction</span>(<span style=color:#a6e22e>action</span>: <span style=color:#66d9ef>string</span>)<span style=color:#f92672>:</span> <span style=color:#66d9ef>boolean</span> {
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>this</span>.<span style=color:#a6e22e>actions</span>.<span style=color:#a6e22e>push</span>(<span style=color:#a6e22e>action</span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#75715e>// Check last N actions for repetition
+</span></span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> (<span style=color:#66d9ef>this</span>.<span style=color:#a6e22e>actions</span>.<span style=color:#a6e22e>length</span> <span style=color:#f92672>&gt;=</span> <span style=color:#66d9ef>this</span>.<span style=color:#a6e22e>maxRepeats</span>) {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>recent</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>this</span>.<span style=color:#a6e22e>actions</span>.<span style=color:#a6e22e>slice</span>(<span style=color:#f92672>-</span><span style=color:#66d9ef>this</span>.<span style=color:#a6e22e>maxRepeats</span>);
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>allSame</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>recent</span>.<span style=color:#a6e22e>every</span>(<span style=color:#a6e22e>a</span> <span style=color:#f92672>=&gt;</span> <span style=color:#a6e22e>a</span> <span style=color:#f92672>===</span> <span style=color:#a6e22e>recent</span>[<span style=color:#ae81ff>0</span>]);
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>if</span> (<span style=color:#a6e22e>allSame</span>) {
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>console</span>.<span style=color:#a6e22e>warn</span>(<span style=color:#e6db74>&#39;⚠️ Loop detected: same action repeated&#39;</span>);
+</span></span><span style=display:flex><span>                <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>true</span>; <span style=color:#75715e>// is looping
+</span></span></span><span style=display:flex><span>            }
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>false</span>; <span style=color:#75715e>// not looping
+</span></span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></td></tr></table></div></div><h3 id=sandboxing>Sandboxing</h3><p>Run the agent in a restricted environment:</p><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-typescript data-lang=typescript><span style=display:flex><span><span style=color:#75715e>// Restrict file access to project directory only
+</span></span></span><span style=display:flex><span><span style=color:#66d9ef>function</span> <span style=color:#a6e22e>isPathSafe</span>(<span style=color:#a6e22e>filepath</span>: <span style=color:#66d9ef>string</span>)<span style=color:#f92672>:</span> <span style=color:#66d9ef>boolean</span> {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>resolved</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>path</span>.<span style=color:#a6e22e>resolve</span>(<span style=color:#a6e22e>filepath</span>);
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>projectRoot</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>path</span>.<span style=color:#a6e22e>resolve</span>(<span style=color:#e6db74>&#39;.&#39;</span>);
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> <span style=color:#a6e22e>resolved</span>.<span style=color:#a6e22e>startsWith</span>(<span style=color:#a6e22e>projectRoot</span>);
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// Restrict command execution
+</span></span></span><span style=display:flex><span><span style=color:#66d9ef>const</span> <span style=color:#a6e22e>BLOCKED_COMMANDS</span> <span style=color:#f92672>=</span> [
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#39;rm -rf&#39;</span>, <span style=color:#e6db74>&#39;rm -r /&#39;</span>,
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#39;sudo&#39;</span>, <span style=color:#e6db74>&#39;chmod 777&#39;</span>,
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#39;curl | sh&#39;</span>, <span style=color:#e6db74>&#39;wget | sh&#39;</span>,
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#39;DROP TABLE&#39;</span>, <span style=color:#e6db74>&#39;DELETE FROM&#39;</span>,
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#39;format&#39;</span>, <span style=color:#e6db74>&#39;fdisk&#39;</span>
+</span></span><span style=display:flex><span>];
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>function</span> <span style=color:#a6e22e>isCommandSafe</span>(<span style=color:#a6e22e>command</span>: <span style=color:#66d9ef>string</span>)<span style=color:#f92672>:</span> <span style=color:#66d9ef>boolean</span> {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> <span style=color:#f92672>!</span><span style=color:#a6e22e>BLOCKED_COMMANDS</span>.<span style=color:#a6e22e>some</span>(<span style=color:#a6e22e>blocked</span> <span style=color:#f92672>=&gt;</span>
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>command</span>.<span style=color:#a6e22e>toLowerCase</span>().<span style=color:#a6e22e>includes</span>(<span style=color:#a6e22e>blocked</span>.<span style=color:#a6e22e>toLowerCase</span>())
+</span></span><span style=display:flex><span>    );
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></td></tr></table></div></div><h3 id=cost-controls>Cost Controls</h3><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-typescript data-lang=typescript><span style=display:flex><span><span style=color:#66d9ef>class</span> <span style=color:#a6e22e>CostTracker</span> {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>private</span> <span style=color:#a6e22e>totalTokens</span> <span style=color:#f92672>=</span> <span style=color:#ae81ff>0</span>;
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>private</span> <span style=color:#a6e22e>maxTokens</span>: <span style=color:#66d9ef>number</span>;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>constructor</span>(<span style=color:#a6e22e>maxBudgetUSD</span>: <span style=color:#66d9ef>number</span>) {
+</span></span><span style=display:flex><span>        <span style=color:#75715e>// Approximate: $3 per 1M tokens for Claude Sonnet
+</span></span></span><span style=display:flex><span>        <span style=color:#66d9ef>this</span>.<span style=color:#a6e22e>maxTokens</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>maxBudgetUSD</span> <span style=color:#f92672>*</span> <span style=color:#ae81ff>333</span><span style=color:#a6e22e>_333</span>;
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>addUsage</span>(<span style=color:#a6e22e>inputTokens</span>: <span style=color:#66d9ef>number</span>, <span style=color:#a6e22e>outputTokens</span>: <span style=color:#66d9ef>number</span>)<span style=color:#f92672>:</span> <span style=color:#66d9ef>boolean</span> {
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>this</span>.<span style=color:#a6e22e>totalTokens</span> <span style=color:#f92672>+=</span> <span style=color:#a6e22e>inputTokens</span> <span style=color:#f92672>+</span> <span style=color:#a6e22e>outputTokens</span>;
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> (<span style=color:#66d9ef>this</span>.<span style=color:#a6e22e>totalTokens</span> <span style=color:#f92672>&gt;</span> <span style=color:#66d9ef>this</span>.<span style=color:#a6e22e>maxTokens</span>) {
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>console</span>.<span style=color:#a6e22e>warn</span>(<span style=color:#e6db74>&#39;💰 Budget exceeded!&#39;</span>);
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>false</span>; <span style=color:#75715e>// over budget
+</span></span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>true</span>; <span style=color:#75715e>// within budget
+</span></span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></td></tr></table></div></div><h2 id=46-hands-on-exercise-build-and-run-your-agent>4.6 Hands-On Exercise: Build and Run Your Agent</h2><h3 id=exercise-the-bug-hunt-challenge>Exercise: The Bug Hunt Challenge</h3><p>We&rsquo;ve prepared a repository with 5 intentional bugs:</p><ol><li><strong>Off-by-one error</strong> in a loop</li><li><strong>Null reference</strong> on optional field access</li><li><strong>Race condition</strong> in an async function</li><li><strong>SQL injection</strong> vulnerability</li><li><strong>Incorrect error handling</strong> that swallows exceptions</li></ol><p>Your task:</p><ol><li>Clone the starter repo</li><li>Set up the agent with the tools from this module</li><li>Run the agent against each bug, one at a time</li><li>Evaluate: Which bugs did it fix correctly? Which did it struggle with?</li><li>Improve your system prompt based on the results</li></ol><h3 id=evaluation-criteria>Evaluation Criteria</h3><p>For each bug fix, score:</p><ul><li><strong>Detection</strong> (0-2): Did the agent find the bug?</li><li><strong>Fix Quality</strong> (0-3): Was the fix correct, minimal, and idiomatic?</li><li><strong>Verification</strong> (0-2): Did the agent verify its fix with tests?</li><li><strong>Efficiency</strong> (0-3): How many iterations did it take?</li></ul><p>A score of 8+ out of 10 per bug = your agent is production-ready for simple fixes.</p><h2 id=key-takeaways>Key Takeaways</h2><ol><li>Agents differ from chat assistants in their ability to take actions and verify results autonomously</li><li>The agent loop (Observe → Think → Act → Evaluate) is the universal pattern for all AI agents</li><li>Tool design is critical — well-defined, focused tools produce better agent behavior</li><li>Safety guardrails (iteration limits, sandboxing, cost controls) are non-negotiable</li><li>Start with simple, well-scoped tasks before attempting complex multi-file changes</li></ol><h2 id=next-module>Next Module</h2><p>In <strong>Module 5: Multi-Agent Orchestration</strong>, we&rsquo;ll take everything we&rsquo;ve built and scale it up — running multiple specialized agents that collaborate on larger tasks.</p><hr><p><em>Continue to <a href=../module-5-multi-agent/>Module 5: Multi-Agent Orchestration →</a></em></p></div><footer class=post-footer><p><strong>Enjoyed this article?</strong> Follow Content Empire for more developer content.</p></footer></article></main><footer class=footer><div class=container><p>&copy; 2026 Content Empire. Build. Publish. Dominate.</p></div></footer></body></html>

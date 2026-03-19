@@ -1,0 +1,718 @@
+<!doctype html><html lang=en><head><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Module 3: AI-Powered Code Review and Testing | Content Empire</title><meta name=description content="Build automated code review bots and AI-driven test generation pipelines that catch bugs before humans even look at the code."><link rel=stylesheet href=https://tamirdresher.github.io/content-empire/css/style.css><link rel=preconnect href=https://fonts.googleapis.com><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono&display=swap" rel=stylesheet></head><body><nav class=navbar><div class=container><a href=https://tamirdresher.github.io/content-empire/ class=logo>⚡ Content Empire</a><div class=nav-links><a href=https://tamirdresher.github.io/content-empire/posts/>Articles</a>
+<a href=https://tamirdresher.github.io/content-empire/courses/>Courses</a>
+<a href=https://tamirdresher.github.io/content-empire/pages/about/>About</a></div></div></nav><main class=container><article class=post-single><header class=post-header><h1>Module 3: AI-Powered Code Review and Testing</h1><div class=post-meta><time>July 23, 2025</time>
+· By The Content Empire Team
+· 10 min read</div><div class=post-tags><span class=tag>AI</span> <span class=tag>course</span> <span class=tag>code-review</span> <span class=tag>testing</span></div></header><div class=post-content><h1 id=module-3-ai-powered-code-review-and-testing>Module 3: AI-Powered Code Review and Testing</h1><h2 id=learning-objectives>Learning Objectives</h2><p>By the end of this module, you will:</p><ul><li>Understand how AI can systematically review code changes</li><li>Build an automated PR review bot using AI</li><li>Generate comprehensive test suites with AI assistance</li><li>Use AI for security vulnerability detection</li><li>Know the limits of AI code review and when human review is still essential</li></ul><h2 id=31-the-case-for-ai-code-review>3.1 The Case for AI Code Review</h2><p>Manual code review is one of the biggest bottlenecks in software development:</p><ul><li>Average PR review wait time: <strong>4-6 hours</strong> (many teams report 24+ hours)</li><li>Average reviewer attention span per PR: <strong>15-20 minutes</strong></li><li>Bug detection rate in manual review: <strong>25-40%</strong> of introduced bugs</li><li>Reviewer fatigue: Quality drops sharply after the third PR in a session</li></ul><p>AI doesn&rsquo;t replace human reviewers — it acts as a <strong>first-pass filter</strong> that catches routine issues so human reviewers can focus on architecture, design, and business logic.</p><pre tabindex=0><code>Traditional Review Pipeline:
+Developer → PR → [Wait 4-24 hours] → Human Review → Fix → Re-review
+
+AI-Augmented Review Pipeline:
+Developer → PR → [Instant] AI Review → Fix Obvious Issues → Human Review
+                                          ↓
+                                    (30-50% of issues
+                                     caught before human
+                                     ever looks at the PR)
+</code></pre><h2 id=32-building-a-pr-review-bot>3.2 Building a PR Review Bot</h2><p>Let&rsquo;s build a GitHub Actions workflow that reviews every PR automatically.</p><h3 id=architecture>Architecture</h3><pre tabindex=0><code>GitHub PR Event
+      │
+      ▼
+GitHub Action Triggered
+      │
+      ▼
+Collect Changed Files &amp; Diffs
+      │
+      ▼
+Send to AI with Review Prompt
+      │
+      ▼
+Parse AI Response
+      │
+      ▼
+Post Inline Comments on PR
+</code></pre><h3 id=step-1-the-github-action-workflow>Step 1: The GitHub Action Workflow</h3><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">30
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">31
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">32
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">33
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">34
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">35
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">36
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">37
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">38
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">39
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">40
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-yaml data-lang=yaml><span style=display:flex><span><span style=color:#75715e># .github/workflows/ai-review.yml</span>
+</span></span><span style=display:flex><span><span style=color:#f92672>name</span>: <span style=color:#ae81ff>AI Code Review</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#f92672>on</span>:
+</span></span><span style=display:flex><span>  <span style=color:#f92672>pull_request</span>:
+</span></span><span style=display:flex><span>    <span style=color:#f92672>types</span>: [<span style=color:#ae81ff>opened, synchronize]</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#f92672>permissions</span>:
+</span></span><span style=display:flex><span>  <span style=color:#f92672>contents</span>: <span style=color:#ae81ff>read</span>
+</span></span><span style=display:flex><span>  <span style=color:#f92672>pull-requests</span>: <span style=color:#ae81ff>write</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#f92672>jobs</span>:
+</span></span><span style=display:flex><span>  <span style=color:#f92672>review</span>:
+</span></span><span style=display:flex><span>    <span style=color:#f92672>runs-on</span>: <span style=color:#ae81ff>ubuntu-latest</span>
+</span></span><span style=display:flex><span>    <span style=color:#f92672>steps</span>:
+</span></span><span style=display:flex><span>      - <span style=color:#f92672>uses</span>: <span style=color:#ae81ff>actions/checkout@v4</span>
+</span></span><span style=display:flex><span>        <span style=color:#f92672>with</span>:
+</span></span><span style=display:flex><span>          <span style=color:#f92672>fetch-depth</span>: <span style=color:#ae81ff>0</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>      - <span style=color:#f92672>name</span>: <span style=color:#ae81ff>Setup Node.js</span>
+</span></span><span style=display:flex><span>        <span style=color:#f92672>uses</span>: <span style=color:#ae81ff>actions/setup-node@v4</span>
+</span></span><span style=display:flex><span>        <span style=color:#f92672>with</span>:
+</span></span><span style=display:flex><span>          <span style=color:#f92672>node-version</span>: <span style=color:#e6db74>&#39;20&#39;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>      - <span style=color:#f92672>name</span>: <span style=color:#ae81ff>Install dependencies</span>
+</span></span><span style=display:flex><span>        <span style=color:#f92672>run</span>: <span style=color:#ae81ff>npm ci</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>      - <span style=color:#f92672>name</span>: <span style=color:#ae81ff>Get changed files</span>
+</span></span><span style=display:flex><span>        <span style=color:#f92672>id</span>: <span style=color:#ae81ff>changes</span>
+</span></span><span style=display:flex><span>        <span style=color:#f92672>run</span>: |<span style=color:#e6db74>
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>          DIFF=$(git diff origin/${{ github.base_ref }}...HEAD --unified=5)
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>          echo &#34;$DIFF&#34; &gt; /tmp/pr-diff.txt
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>          echo &#34;diff_file=/tmp/pr-diff.txt&#34; &gt;&gt; $GITHUB_OUTPUT</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>      - <span style=color:#f92672>name</span>: <span style=color:#ae81ff>Run AI review</span>
+</span></span><span style=display:flex><span>        <span style=color:#f92672>env</span>:
+</span></span><span style=display:flex><span>          <span style=color:#f92672>ANTHROPIC_API_KEY</span>: <span style=color:#ae81ff>${{ secrets.ANTHROPIC_API_KEY }}</span>
+</span></span><span style=display:flex><span>          <span style=color:#f92672>GITHUB_TOKEN</span>: <span style=color:#ae81ff>${{ secrets.GITHUB_TOKEN }}</span>
+</span></span><span style=display:flex><span>          <span style=color:#f92672>PR_NUMBER</span>: <span style=color:#ae81ff>${{ github.event.pull_request.number }}</span>
+</span></span><span style=display:flex><span>        <span style=color:#f92672>run</span>: <span style=color:#ae81ff>node scripts/ai-review.js</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=step-2-the-review-script>Step 2: The Review Script</h3><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">30
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">31
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">32
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">33
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">34
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">35
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">36
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">37
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">38
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">39
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">40
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">41
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">42
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">43
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">44
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">45
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">46
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">47
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">48
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">49
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">50
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">51
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">52
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">53
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">54
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">55
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">56
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">57
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">58
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">59
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">60
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">61
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">62
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">63
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">64
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">65
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">66
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">67
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">68
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">69
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">70
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">71
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">72
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">73
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">74
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">75
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">76
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">77
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">78
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">79
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">80
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">81
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">82
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">83
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">84
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">85
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">86
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">87
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">88
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">89
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">90
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">91
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">92
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">93
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">94
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">95
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-javascript data-lang=javascript><span style=display:flex><span><span style=color:#75715e>// scripts/ai-review.js
+</span></span></span><span style=display:flex><span><span style=color:#66d9ef>import</span> <span style=color:#a6e22e>Anthropic</span> <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;@anthropic-ai/sdk&#39;</span>;
+</span></span><span style=display:flex><span><span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>readFileSync</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;fs&#39;</span>;
+</span></span><span style=display:flex><span><span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>execSync</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;child_process&#39;</span>;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>const</span> <span style=color:#a6e22e>anthropic</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>new</span> <span style=color:#a6e22e>Anthropic</span>();
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>function</span> <span style=color:#a6e22e>reviewPR</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// Get the diff
+</span></span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>diff</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>execSync</span>(
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>&#39;git diff origin/main...HEAD --unified=5&#39;</span>,
+</span></span><span style=display:flex><span>        { <span style=color:#a6e22e>encoding</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;utf-8&#39;</span>, <span style=color:#a6e22e>maxBuffer</span><span style=color:#f92672>:</span> <span style=color:#ae81ff>1024</span> <span style=color:#f92672>*</span> <span style=color:#ae81ff>1024</span> }
+</span></span><span style=display:flex><span>    );
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> (<span style=color:#f92672>!</span><span style=color:#a6e22e>diff</span>.<span style=color:#a6e22e>trim</span>()) {
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>console</span>.<span style=color:#a6e22e>log</span>(<span style=color:#e6db74>&#39;No changes to review&#39;</span>);
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span>;
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// Build the review prompt
+</span></span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>prompt</span> <span style=color:#f92672>=</span> <span style=color:#e6db74>`You are an expert code reviewer. Review the following
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>code diff and identify ONLY genuinely important issues:
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>## What to flag:
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- Bugs and logic errors
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- Security vulnerabilities (SQL injection, XSS, auth bypass)
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- Performance issues (O(n²) in hot paths, memory leaks, missing indexes)
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- Race conditions and concurrency issues
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- Missing error handling for critical paths
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- Breaking API changes without documentation
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>## What NOT to flag:
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- Style preferences (formatting, naming conventions)
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- Minor optimizations that don&#39;t matter at current scale
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- &#34;Consider using X instead of Y&#34; suggestions without clear benefit
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- Anything that a linter would catch
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>## Output format:
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>For each issue, respond with:
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>FILE: &lt;filename&gt;
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>LINE: &lt;line number in the new code&gt;
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>SEVERITY: critical | warning | info
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>ISSUE: &lt;brief description&gt;
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>SUGGESTION: &lt;how to fix it&gt;
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>---
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>If there are no significant issues, respond with:
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>LGTM: No significant issues found.
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>## Diff to review:
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>\`\`\`
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>${</span><span style=color:#a6e22e>diff</span>.<span style=color:#a6e22e>substring</span>(<span style=color:#ae81ff>0</span>, <span style=color:#ae81ff>30000</span>)<span style=color:#e6db74>}</span><span style=color:#e6db74>
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>\`\`\``</span>;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>response</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>anthropic</span>.<span style=color:#a6e22e>messages</span>.<span style=color:#a6e22e>create</span>({
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>model</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;claude-sonnet-4-20250514&#39;</span>,
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>max_tokens</span><span style=color:#f92672>:</span> <span style=color:#ae81ff>4096</span>,
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>messages</span><span style=color:#f92672>:</span> [{ <span style=color:#a6e22e>role</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;user&#39;</span>, <span style=color:#a6e22e>content</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>prompt</span> }]
+</span></span><span style=display:flex><span>    });
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>reviewText</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>response</span>.<span style=color:#a6e22e>content</span>[<span style=color:#ae81ff>0</span>].<span style=color:#a6e22e>text</span>;
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>console</span>.<span style=color:#a6e22e>log</span>(<span style=color:#e6db74>&#39;AI Review Result:&#39;</span>);
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>console</span>.<span style=color:#a6e22e>log</span>(<span style=color:#a6e22e>reviewText</span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// Post as PR comment
+</span></span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>postReviewComment</span>(<span style=color:#a6e22e>reviewText</span>);
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>function</span> <span style=color:#a6e22e>postReviewComment</span>(<span style=color:#a6e22e>review</span>) {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>prNumber</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>process</span>.<span style=color:#a6e22e>env</span>.<span style=color:#a6e22e>PR_NUMBER</span>;
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>token</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>process</span>.<span style=color:#a6e22e>env</span>.<span style=color:#a6e22e>GITHUB_TOKEN</span>;
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> [<span style=color:#a6e22e>owner</span>, <span style=color:#a6e22e>repo</span>] <span style=color:#f92672>=</span> <span style=color:#a6e22e>process</span>.<span style=color:#a6e22e>env</span>.<span style=color:#a6e22e>GITHUB_REPOSITORY</span>.<span style=color:#a6e22e>split</span>(<span style=color:#e6db74>&#39;/&#39;</span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>response</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>fetch</span>(
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>`https://api.github.com/repos/</span><span style=color:#e6db74>${</span><span style=color:#a6e22e>owner</span><span style=color:#e6db74>}</span><span style=color:#e6db74>/</span><span style=color:#e6db74>${</span><span style=color:#a6e22e>repo</span><span style=color:#e6db74>}</span><span style=color:#e6db74>/issues/</span><span style=color:#e6db74>${</span><span style=color:#a6e22e>prNumber</span><span style=color:#e6db74>}</span><span style=color:#e6db74>/comments`</span>,
+</span></span><span style=display:flex><span>        {
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>method</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;POST&#39;</span>,
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>headers</span><span style=color:#f92672>:</span> {
+</span></span><span style=display:flex><span>                <span style=color:#e6db74>&#39;Authorization&#39;</span><span style=color:#f92672>:</span> <span style=color:#e6db74>`Bearer </span><span style=color:#e6db74>${</span><span style=color:#a6e22e>token</span><span style=color:#e6db74>}</span><span style=color:#e6db74>`</span>,
+</span></span><span style=display:flex><span>                <span style=color:#e6db74>&#39;Accept&#39;</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;application/vnd.github+json&#39;</span>,
+</span></span><span style=display:flex><span>            },
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>body</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>JSON</span>.<span style=color:#a6e22e>stringify</span>({
+</span></span><span style=display:flex><span>                <span style=color:#a6e22e>body</span><span style=color:#f92672>:</span> <span style=color:#e6db74>`## 🤖 AI Code Review\n\n</span><span style=color:#e6db74>${</span><span style=color:#a6e22e>review</span><span style=color:#e6db74>}</span><span style=color:#e6db74>\n\n---\n*Automated review by Content Empire AI Review Bot*`</span>
+</span></span><span style=display:flex><span>            })
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>    );
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> (<span style=color:#a6e22e>response</span>.<span style=color:#a6e22e>ok</span>) {
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>console</span>.<span style=color:#a6e22e>log</span>(<span style=color:#e6db74>&#39;Review comment posted successfully&#39;</span>);
+</span></span><span style=display:flex><span>    } <span style=color:#66d9ef>else</span> {
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>console</span>.<span style=color:#a6e22e>error</span>(<span style=color:#e6db74>&#39;Failed to post comment:&#39;</span>, <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>response</span>.<span style=color:#a6e22e>text</span>());
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>reviewPR</span>().<span style=color:#66d9ef>catch</span>(<span style=color:#a6e22e>console</span>.<span style=color:#a6e22e>error</span>);
+</span></span></code></pre></td></tr></table></div></div><h3 id=step-3-making-it-smarter-with-project-context>Step 3: Making It Smarter with Project Context</h3><p>The basic reviewer works, but providing project context dramatically improves quality:</p><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-javascript data-lang=javascript><span style=display:flex><span><span style=color:#75715e>// Enhance the prompt with project-specific context
+</span></span></span><span style=display:flex><span><span style=color:#66d9ef>function</span> <span style=color:#a6e22e>buildContextualPrompt</span>(<span style=color:#a6e22e>diff</span>) {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>packageJson</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>safeReadFile</span>(<span style=color:#e6db74>&#39;package.json&#39;</span>);
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>tsConfig</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>safeReadFile</span>(<span style=color:#e6db74>&#39;tsconfig.json&#39;</span>);
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>architecture</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>safeReadFile</span>(<span style=color:#e6db74>&#39;ARCHITECTURE.md&#39;</span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> <span style=color:#e6db74>`
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>## Project Context
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- Tech Stack: </span><span style=color:#e6db74>${</span><span style=color:#a6e22e>extractTechStack</span>(<span style=color:#a6e22e>packageJson</span>)<span style=color:#e6db74>}</span><span style=color:#e6db74>
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- TypeScript Config: </span><span style=color:#e6db74>${</span><span style=color:#a6e22e>summarizeTsConfig</span>(<span style=color:#a6e22e>tsConfig</span>)<span style=color:#e6db74>}</span><span style=color:#e6db74>
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- Architecture: </span><span style=color:#e6db74>${</span><span style=color:#a6e22e>architecture</span><span style=color:#f92672>?</span>.<span style=color:#a6e22e>substring</span>(<span style=color:#ae81ff>0</span>, <span style=color:#ae81ff>2000</span>) <span style=color:#f92672>||</span> <span style=color:#e6db74>&#39;Not available&#39;</span><span style=color:#e6db74>}</span><span style=color:#e6db74>
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>## Team Conventions
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- We use Result&lt;T, E&gt; types instead of throwing exceptions
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- All database access goes through repository classes
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- HTTP handlers must validate input with Zod schemas
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- All public functions require JSDoc comments
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>## Review the following diff with this context in mind:
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>\`\`\`
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>${</span><span style=color:#a6e22e>diff</span><span style=color:#e6db74>}</span><span style=color:#e6db74>
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>\`\`\`
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>`</span>;
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></td></tr></table></div></div><h2 id=33-ai-driven-test-generation>3.3 AI-Driven Test Generation</h2><h3 id=the-test-generation-pipeline>The Test Generation Pipeline</h3><p>AI is remarkably good at generating test cases — especially for:</p><ul><li>Edge cases humans forget</li><li>Boundary value testing</li><li>Error path coverage</li><li>Integration test scaffolding</li></ul><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">30
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">31
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">32
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">33
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">34
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">35
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">36
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">37
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">38
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">39
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">40
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">41
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">42
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">43
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">44
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">45
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">46
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-typescript data-lang=typescript><span style=display:flex><span><span style=color:#75715e>// test-generator.ts
+</span></span></span><span style=display:flex><span><span style=color:#66d9ef>import</span> <span style=color:#a6e22e>Anthropic</span> <span style=color:#66d9ef>from</span> <span style=color:#e6db74>&#39;@anthropic-ai/sdk&#39;</span>;
+</span></span><span style=display:flex><span><span style=color:#66d9ef>import</span> <span style=color:#f92672>*</span> <span style=color:#66d9ef>as</span> <span style=color:#a6e22e>fs</span> <span style=color:#66d9ef>from</span> <span style=color:#e6db74>&#39;fs&#39;</span>;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>function</span> <span style=color:#a6e22e>generateTests</span>(<span style=color:#a6e22e>sourceFile</span>: <span style=color:#66d9ef>string</span>)<span style=color:#f92672>:</span> <span style=color:#a6e22e>Promise</span>&lt;<span style=color:#f92672>string</span>&gt; {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>source</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>fs</span>.<span style=color:#a6e22e>readFileSync</span>(<span style=color:#a6e22e>sourceFile</span>, <span style=color:#e6db74>&#39;utf-8&#39;</span>);
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>existingTests</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>findExistingTests</span>(<span style=color:#a6e22e>sourceFile</span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>anthropic</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>new</span> <span style=color:#a6e22e>Anthropic</span>();
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>response</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>anthropic</span>.<span style=color:#a6e22e>messages</span>.<span style=color:#a6e22e>create</span>({
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>model</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;claude-sonnet-4-20250514&#39;</span>,
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>max_tokens</span>: <span style=color:#66d9ef>4096</span>,
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>messages</span><span style=color:#f92672>:</span> [{
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>role</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;user&#39;</span>,
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>content</span><span style=color:#f92672>:</span> <span style=color:#e6db74>`Generate comprehensive unit tests for this code.
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>## Source Code:
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>\`\`\`typescript
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>${</span><span style=color:#a6e22e>source</span><span style=color:#e6db74>}</span><span style=color:#e6db74>
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>\`\`\`
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>## Existing Tests (don&#39;t duplicate):
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>\`\`\`typescript
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>${</span><span style=color:#a6e22e>existingTests</span> <span style=color:#f92672>||</span> <span style=color:#e6db74>&#39;No existing tests&#39;</span><span style=color:#e6db74>}</span><span style=color:#e6db74>
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>\`\`\`
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>## Requirements:
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- Use Vitest syntax (describe, it, expect)
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- Test happy paths, error paths, edge cases, and boundary values
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- Mock external dependencies
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- Each test should be independent
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- Use descriptive test names that explain the expected behavior
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- Include at least one test for:
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>  - Normal operation
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>  - Empty/null input
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>  - Boundary values
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>  - Error handling
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>  - Concurrent access (if applicable)
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>## Output:
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>Return ONLY the test file contents, no explanation.`</span>
+</span></span><span style=display:flex><span>        }]
+</span></span><span style=display:flex><span>    });
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> <span style=color:#a6e22e>response</span>.<span style=color:#a6e22e>content</span>[<span style=color:#ae81ff>0</span>].<span style=color:#a6e22e>text</span>;
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></td></tr></table></div></div><h3 id=example-generated-tests>Example: Generated Tests</h3><p>Given this input function:</p><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-typescript data-lang=typescript><span style=display:flex><span><span style=color:#75715e>// src/utils/pagination.ts
+</span></span></span><span style=display:flex><span><span style=color:#66d9ef>export</span> <span style=color:#66d9ef>function</span> <span style=color:#a6e22e>paginate</span>&lt;<span style=color:#f92672>T</span>&gt;(
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>items</span>: <span style=color:#66d9ef>T</span>[],
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>page</span>: <span style=color:#66d9ef>number</span>,
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>pageSize</span>: <span style=color:#66d9ef>number</span>
+</span></span><span style=display:flex><span>)<span style=color:#f92672>:</span> <span style=color:#a6e22e>PaginationResult</span>&lt;<span style=color:#f92672>T</span>&gt; {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> (<span style=color:#a6e22e>page</span> <span style=color:#f92672>&lt;</span> <span style=color:#ae81ff>1</span>) <span style=color:#66d9ef>throw</span> <span style=color:#66d9ef>new</span> Error(<span style=color:#e6db74>&#39;Page must be &gt;= 1&#39;</span>);
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> (<span style=color:#a6e22e>pageSize</span> <span style=color:#f92672>&lt;</span> <span style=color:#ae81ff>1</span>) <span style=color:#66d9ef>throw</span> <span style=color:#66d9ef>new</span> Error(<span style=color:#e6db74>&#39;Page size must be &gt;= 1&#39;</span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>totalItems</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>items</span>.<span style=color:#a6e22e>length</span>;
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>totalPages</span> <span style=color:#f92672>=</span> Math.<span style=color:#a6e22e>ceil</span>(<span style=color:#a6e22e>totalItems</span> <span style=color:#f92672>/</span> <span style=color:#a6e22e>pageSize</span>);
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>start</span> <span style=color:#f92672>=</span> (<span style=color:#a6e22e>page</span> <span style=color:#f92672>-</span> <span style=color:#ae81ff>1</span>) <span style=color:#f92672>*</span> <span style=color:#a6e22e>pageSize</span>;
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>end</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>start</span> <span style=color:#f92672>+</span> <span style=color:#a6e22e>pageSize</span>;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> {
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>data</span>: <span style=color:#66d9ef>items.slice</span>(<span style=color:#a6e22e>start</span>, <span style=color:#a6e22e>end</span>),
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>pagination</span><span style=color:#f92672>:</span> {
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>page</span>,
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>pageSize</span>,
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>totalItems</span>,
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>totalPages</span>,
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>hasNext</span>: <span style=color:#66d9ef>page</span> <span style=color:#f92672>&lt;</span> <span style=color:#a6e22e>totalPages</span>,
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>hasPrevious</span>: <span style=color:#66d9ef>page</span> <span style=color:#f92672>&gt;</span> <span style=color:#ae81ff>1</span>
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>    };
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></td></tr></table></div></div><p>AI generates:</p><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">30
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">31
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">32
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">33
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">34
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">35
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">36
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">37
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">38
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">39
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">40
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">41
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">42
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">43
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">44
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">45
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">46
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">47
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">48
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">49
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">50
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">51
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">52
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">53
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">54
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">55
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">56
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">57
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">58
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">59
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">60
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">61
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">62
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">63
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">64
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">65
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">66
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">67
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">68
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">69
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">70
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">71
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">72
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">73
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">74
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">75
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">76
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">77
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">78
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">79
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">80
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">81
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">82
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">83
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">84
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">85
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">86
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">87
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">88
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-typescript data-lang=typescript><span style=display:flex><span><span style=color:#75715e>// src/utils/pagination.test.ts
+</span></span></span><span style=display:flex><span><span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>describe</span>, <span style=color:#a6e22e>it</span>, <span style=color:#a6e22e>expect</span> } <span style=color:#66d9ef>from</span> <span style=color:#e6db74>&#39;vitest&#39;</span>;
+</span></span><span style=display:flex><span><span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>paginate</span> } <span style=color:#66d9ef>from</span> <span style=color:#e6db74>&#39;./pagination&#39;</span>;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>describe</span>(<span style=color:#e6db74>&#39;paginate&#39;</span>, () <span style=color:#f92672>=&gt;</span> {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>items</span> <span style=color:#f92672>=</span> [<span style=color:#ae81ff>1</span>, <span style=color:#ae81ff>2</span>, <span style=color:#ae81ff>3</span>, <span style=color:#ae81ff>4</span>, <span style=color:#ae81ff>5</span>, <span style=color:#ae81ff>6</span>, <span style=color:#ae81ff>7</span>, <span style=color:#ae81ff>8</span>, <span style=color:#ae81ff>9</span>, <span style=color:#ae81ff>10</span>];
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>describe</span>(<span style=color:#e6db74>&#39;happy path&#39;</span>, () <span style=color:#f92672>=&gt;</span> {
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>it</span>(<span style=color:#e6db74>&#39;returns the correct page of items&#39;</span>, () <span style=color:#f92672>=&gt;</span> {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>result</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>paginate</span>(<span style=color:#a6e22e>items</span>, <span style=color:#ae81ff>1</span>, <span style=color:#ae81ff>3</span>);
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>expect</span>(<span style=color:#a6e22e>result</span>.<span style=color:#a6e22e>data</span>).<span style=color:#a6e22e>toEqual</span>([<span style=color:#ae81ff>1</span>, <span style=color:#ae81ff>2</span>, <span style=color:#ae81ff>3</span>]);
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>expect</span>(<span style=color:#a6e22e>result</span>.<span style=color:#a6e22e>pagination</span>.<span style=color:#a6e22e>page</span>).<span style=color:#a6e22e>toBe</span>(<span style=color:#ae81ff>1</span>);
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>expect</span>(<span style=color:#a6e22e>result</span>.<span style=color:#a6e22e>pagination</span>.<span style=color:#a6e22e>totalPages</span>).<span style=color:#a6e22e>toBe</span>(<span style=color:#ae81ff>4</span>);
+</span></span><span style=display:flex><span>        });
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>it</span>(<span style=color:#e6db74>&#39;returns the last page with remaining items&#39;</span>, () <span style=color:#f92672>=&gt;</span> {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>result</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>paginate</span>(<span style=color:#a6e22e>items</span>, <span style=color:#ae81ff>4</span>, <span style=color:#ae81ff>3</span>);
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>expect</span>(<span style=color:#a6e22e>result</span>.<span style=color:#a6e22e>data</span>).<span style=color:#a6e22e>toEqual</span>([<span style=color:#ae81ff>10</span>]);
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>expect</span>(<span style=color:#a6e22e>result</span>.<span style=color:#a6e22e>pagination</span>.<span style=color:#a6e22e>hasNext</span>).<span style=color:#a6e22e>toBe</span>(<span style=color:#66d9ef>false</span>);
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>expect</span>(<span style=color:#a6e22e>result</span>.<span style=color:#a6e22e>pagination</span>.<span style=color:#a6e22e>hasPrevious</span>).<span style=color:#a6e22e>toBe</span>(<span style=color:#66d9ef>true</span>);
+</span></span><span style=display:flex><span>        });
+</span></span><span style=display:flex><span>    });
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>describe</span>(<span style=color:#e6db74>&#39;boundary values&#39;</span>, () <span style=color:#f92672>=&gt;</span> {
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>it</span>(<span style=color:#e6db74>&#39;handles page size equal to total items&#39;</span>, () <span style=color:#f92672>=&gt;</span> {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>result</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>paginate</span>(<span style=color:#a6e22e>items</span>, <span style=color:#ae81ff>1</span>, <span style=color:#ae81ff>10</span>);
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>expect</span>(<span style=color:#a6e22e>result</span>.<span style=color:#a6e22e>data</span>).<span style=color:#a6e22e>toEqual</span>(<span style=color:#a6e22e>items</span>);
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>expect</span>(<span style=color:#a6e22e>result</span>.<span style=color:#a6e22e>pagination</span>.<span style=color:#a6e22e>totalPages</span>).<span style=color:#a6e22e>toBe</span>(<span style=color:#ae81ff>1</span>);
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>expect</span>(<span style=color:#a6e22e>result</span>.<span style=color:#a6e22e>pagination</span>.<span style=color:#a6e22e>hasNext</span>).<span style=color:#a6e22e>toBe</span>(<span style=color:#66d9ef>false</span>);
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>expect</span>(<span style=color:#a6e22e>result</span>.<span style=color:#a6e22e>pagination</span>.<span style=color:#a6e22e>hasPrevious</span>).<span style=color:#a6e22e>toBe</span>(<span style=color:#66d9ef>false</span>);
+</span></span><span style=display:flex><span>        });
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>it</span>(<span style=color:#e6db74>&#39;handles page size of 1&#39;</span>, () <span style=color:#f92672>=&gt;</span> {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>result</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>paginate</span>(<span style=color:#a6e22e>items</span>, <span style=color:#ae81ff>5</span>, <span style=color:#ae81ff>1</span>);
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>expect</span>(<span style=color:#a6e22e>result</span>.<span style=color:#a6e22e>data</span>).<span style=color:#a6e22e>toEqual</span>([<span style=color:#ae81ff>5</span>]);
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>expect</span>(<span style=color:#a6e22e>result</span>.<span style=color:#a6e22e>pagination</span>.<span style=color:#a6e22e>totalPages</span>).<span style=color:#a6e22e>toBe</span>(<span style=color:#ae81ff>10</span>);
+</span></span><span style=display:flex><span>        });
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>it</span>(<span style=color:#e6db74>&#39;handles page beyond available data&#39;</span>, () <span style=color:#f92672>=&gt;</span> {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>result</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>paginate</span>(<span style=color:#a6e22e>items</span>, <span style=color:#ae81ff>100</span>, <span style=color:#ae81ff>3</span>);
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>expect</span>(<span style=color:#a6e22e>result</span>.<span style=color:#a6e22e>data</span>).<span style=color:#a6e22e>toEqual</span>([]);
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>expect</span>(<span style=color:#a6e22e>result</span>.<span style=color:#a6e22e>pagination</span>.<span style=color:#a6e22e>hasNext</span>).<span style=color:#a6e22e>toBe</span>(<span style=color:#66d9ef>false</span>);
+</span></span><span style=display:flex><span>        });
+</span></span><span style=display:flex><span>    });
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>describe</span>(<span style=color:#e6db74>&#39;empty input&#39;</span>, () <span style=color:#f92672>=&gt;</span> {
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>it</span>(<span style=color:#e6db74>&#39;handles empty array&#39;</span>, () <span style=color:#f92672>=&gt;</span> {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>result</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>paginate</span>([], <span style=color:#ae81ff>1</span>, <span style=color:#ae81ff>10</span>);
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>expect</span>(<span style=color:#a6e22e>result</span>.<span style=color:#a6e22e>data</span>).<span style=color:#a6e22e>toEqual</span>([]);
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>expect</span>(<span style=color:#a6e22e>result</span>.<span style=color:#a6e22e>pagination</span>.<span style=color:#a6e22e>totalItems</span>).<span style=color:#a6e22e>toBe</span>(<span style=color:#ae81ff>0</span>);
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>expect</span>(<span style=color:#a6e22e>result</span>.<span style=color:#a6e22e>pagination</span>.<span style=color:#a6e22e>totalPages</span>).<span style=color:#a6e22e>toBe</span>(<span style=color:#ae81ff>0</span>);
+</span></span><span style=display:flex><span>        });
+</span></span><span style=display:flex><span>    });
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>describe</span>(<span style=color:#e6db74>&#39;error handling&#39;</span>, () <span style=color:#f92672>=&gt;</span> {
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>it</span>(<span style=color:#e6db74>&#39;throws for page &lt; 1&#39;</span>, () <span style=color:#f92672>=&gt;</span> {
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>expect</span>(() <span style=color:#f92672>=&gt;</span> <span style=color:#a6e22e>paginate</span>(<span style=color:#a6e22e>items</span>, <span style=color:#ae81ff>0</span>, <span style=color:#ae81ff>10</span>))
+</span></span><span style=display:flex><span>                .<span style=color:#a6e22e>toThrow</span>(<span style=color:#e6db74>&#39;Page must be &gt;= 1&#39;</span>);
+</span></span><span style=display:flex><span>        });
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>it</span>(<span style=color:#e6db74>&#39;throws for negative page&#39;</span>, () <span style=color:#f92672>=&gt;</span> {
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>expect</span>(() <span style=color:#f92672>=&gt;</span> <span style=color:#a6e22e>paginate</span>(<span style=color:#a6e22e>items</span>, <span style=color:#f92672>-</span><span style=color:#ae81ff>1</span>, <span style=color:#ae81ff>10</span>))
+</span></span><span style=display:flex><span>                .<span style=color:#a6e22e>toThrow</span>(<span style=color:#e6db74>&#39;Page must be &gt;= 1&#39;</span>);
+</span></span><span style=display:flex><span>        });
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>it</span>(<span style=color:#e6db74>&#39;throws for pageSize &lt; 1&#39;</span>, () <span style=color:#f92672>=&gt;</span> {
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>expect</span>(() <span style=color:#f92672>=&gt;</span> <span style=color:#a6e22e>paginate</span>(<span style=color:#a6e22e>items</span>, <span style=color:#ae81ff>1</span>, <span style=color:#ae81ff>0</span>))
+</span></span><span style=display:flex><span>                .<span style=color:#a6e22e>toThrow</span>(<span style=color:#e6db74>&#39;Page size must be &gt;= 1&#39;</span>);
+</span></span><span style=display:flex><span>        });
+</span></span><span style=display:flex><span>    });
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>describe</span>(<span style=color:#e6db74>&#39;navigation flags&#39;</span>, () <span style=color:#f92672>=&gt;</span> {
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>it</span>(<span style=color:#e6db74>&#39;hasNext is true when more pages exist&#39;</span>, () <span style=color:#f92672>=&gt;</span> {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>result</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>paginate</span>(<span style=color:#a6e22e>items</span>, <span style=color:#ae81ff>1</span>, <span style=color:#ae81ff>3</span>);
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>expect</span>(<span style=color:#a6e22e>result</span>.<span style=color:#a6e22e>pagination</span>.<span style=color:#a6e22e>hasNext</span>).<span style=color:#a6e22e>toBe</span>(<span style=color:#66d9ef>true</span>);
+</span></span><span style=display:flex><span>        });
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>it</span>(<span style=color:#e6db74>&#39;hasPrevious is false on first page&#39;</span>, () <span style=color:#f92672>=&gt;</span> {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>result</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>paginate</span>(<span style=color:#a6e22e>items</span>, <span style=color:#ae81ff>1</span>, <span style=color:#ae81ff>3</span>);
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>expect</span>(<span style=color:#a6e22e>result</span>.<span style=color:#a6e22e>pagination</span>.<span style=color:#a6e22e>hasPrevious</span>).<span style=color:#a6e22e>toBe</span>(<span style=color:#66d9ef>false</span>);
+</span></span><span style=display:flex><span>        });
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>it</span>(<span style=color:#e6db74>&#39;hasPrevious is true after first page&#39;</span>, () <span style=color:#f92672>=&gt;</span> {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>result</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>paginate</span>(<span style=color:#a6e22e>items</span>, <span style=color:#ae81ff>2</span>, <span style=color:#ae81ff>3</span>);
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>expect</span>(<span style=color:#a6e22e>result</span>.<span style=color:#a6e22e>pagination</span>.<span style=color:#a6e22e>hasPrevious</span>).<span style=color:#a6e22e>toBe</span>(<span style=color:#66d9ef>true</span>);
+</span></span><span style=display:flex><span>        });
+</span></span><span style=display:flex><span>    });
+</span></span><span style=display:flex><span>});
+</span></span></code></pre></td></tr></table></div></div><h2 id=34-security-scanning-with-ai>3.4 Security Scanning with AI</h2><p>AI can identify security patterns that traditional SAST tools miss:</p><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-typescript data-lang=typescript><span style=display:flex><span><span style=color:#66d9ef>const</span> <span style=color:#a6e22e>securityPrompt</span> <span style=color:#f92672>=</span> <span style=color:#e6db74>`
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>Review this code for security vulnerabilities.
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>Focus on OWASP Top 10 categories:
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>1. Injection (SQL, NoSQL, OS command, LDAP)
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>2. Broken Authentication
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>3. Sensitive Data Exposure
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>4. XML External Entities (XXE)
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>5. Broken Access Control
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>6. Security Misconfiguration
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>7. Cross-Site Scripting (XSS)
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>8. Insecure Deserialization
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>9. Using Components with Known Vulnerabilities
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>10. Insufficient Logging &amp; Monitoring
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>For each finding:
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- Describe the vulnerability
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- Explain the attack scenario
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>- Provide the fix with code
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>Code to review:
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>\`\`\`
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>${</span><span style=color:#a6e22e>code</span><span style=color:#e6db74>}</span><span style=color:#e6db74>
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>\`\`\`
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>`</span>;
+</span></span></code></pre></td></tr></table></div></div><h2 id=35-hands-on-exercise-build-your-review-pipeline>3.5 Hands-On Exercise: Build Your Review Pipeline</h2><h3 id=exercise-set-up-ai-review-for-your-project>Exercise: Set Up AI Review for Your Project</h3><ol><li><strong>Fork the starter repo</strong> (provided in course materials)</li><li><strong>Add the AI review GitHub Action</strong> from Section 3.2</li><li><strong>Create a PR with intentional bugs:</strong><ul><li>SQL injection vulnerability</li><li>Missing null check</li><li>Off-by-one error in pagination</li><li>Hardcoded secret</li></ul></li><li><strong>Run the AI review</strong> and evaluate what it catches</li><li><strong>Improve the prompt</strong> based on what it missed</li></ol><h3 id=bonus-exercise-test-generation>Bonus Exercise: Test Generation</h3><ol><li>Pick three functions in your codebase that lack tests</li><li>Use the test generator from Section 3.3</li><li>Run the generated tests — how many pass immediately?</li><li>Fix the ones that don&rsquo;t pass</li><li>Measure: What&rsquo;s the coverage increase?</li></ol><h2 id=36-limits-of-ai-code-review>3.6 Limits of AI Code Review</h2><p>Be honest about what AI review can&rsquo;t do:</p><table><thead><tr><th>AI Review Strengths</th><th>AI Review Weaknesses</th></tr></thead><tbody><tr><td>Pattern matching (common bugs)</td><td>Architectural judgment</td></tr><tr><td>Security vulnerability detection</td><td>Business logic validation</td></tr><tr><td>Style consistency</td><td>Performance in specific context</td></tr><tr><td>Test coverage gaps</td><td>Team dynamics / PR etiquette</td></tr><tr><td>Documentation completeness</td><td>Cross-service implications</td></tr></tbody></table><p><strong>The golden rule:</strong> AI review is a first pass. Human review is the final pass. Never merge a PR that only had AI review.</p><h2 id=key-takeaways>Key Takeaways</h2><ol><li>AI code review catches 30-50% of issues before humans review — saving reviewer time and attention</li><li>The review prompt quality directly determines review quality — invest time in crafting your prompt</li><li>AI-generated tests are excellent for coverage but need human review for correctness of assertions</li><li>Security scanning with AI catches pattern-based vulnerabilities effectively</li><li>Always keep human reviewers in the loop — AI augments, it doesn&rsquo;t replace</li></ol><h2 id=next-module>Next Module</h2><p>In <strong>Module 4: Building Your First AI Agent</strong>, we&rsquo;ll go beyond passive review tools and build an agent that can actively find and fix bugs in your codebase.</p><hr><p><em>Continue to <a href=../module-4-first-agent/>Module 4: Building Your First AI Agent →</a></em></p></div><footer class=post-footer><p><strong>Enjoyed this article?</strong> Follow Content Empire for more developer content.</p></footer></article></main><footer class=footer><div class=container><p>&copy; 2026 Content Empire. Build. Publish. Dominate.</p></div></footer></body></html>

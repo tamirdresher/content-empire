@@ -1,0 +1,429 @@
+<!doctype html><html lang=en><head><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><title>MCP Servers: The Plugin System AI Agents Were Missing | Content Empire</title><meta name=description content="How the Model Context Protocol is becoming the universal plugin system for AI agents — and why it changes everything about tool integration."><link rel=stylesheet href=https://tamirdresher.github.io/content-empire/css/style.css><link rel=preconnect href=https://fonts.googleapis.com><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono&display=swap" rel=stylesheet></head><body><nav class=navbar><div class=container><a href=https://tamirdresher.github.io/content-empire/ class=logo>⚡ Content Empire</a><div class=nav-links><a href=https://tamirdresher.github.io/content-empire/posts/>Articles</a>
+<a href=https://tamirdresher.github.io/content-empire/courses/>Courses</a>
+<a href=https://tamirdresher.github.io/content-empire/pages/about/>About</a></div></div></nav><main class=container><article class=post-single><header class=post-header><h1>MCP Servers: The Plugin System AI Agents Were Missing</h1><div class=post-meta><time>July 24, 2025</time>
+· By The Content Empire Team
+· 7 min read</div><div class=post-tags><span class=tag>AI</span> <span class=tag>MCP</span> <span class=tag>agents</span> <span class=tag>tools</span> <span class=tag>architecture</span></div></header><div class=post-content><p>For years, every AI agent framework reinvented the same wheel: how to let an AI model call external tools. LangChain had its own tool format, AutoGPT had another, and every new agent framework introduced yet another schema for wrapping a function call.</p><p>Then the <strong>Model Context Protocol (MCP)</strong> arrived, and suddenly the fragmentation started to dissolve. MCP is doing for AI agents what USB did for hardware peripherals — one standard plug that works everywhere.</p><h2 id=what-is-mcp-actually>What Is MCP, Actually?</h2><p>MCP is an open protocol that standardizes how AI applications connect to external data sources and tools. Think of it as a universal adapter layer:</p><pre tabindex=0><code>┌──────────────┐          ┌──────────────┐
+│   AI Host    │          │  MCP Server  │
+│  (Claude,    │◄── MCP ──►│  (any tool,  │
+│   Copilot,   │  protocol │   data, API) │
+│   custom)    │          │              │
+└──────────────┘          └──────────────┘
+</code></pre><p>An MCP server exposes three types of capabilities:</p><ol><li><strong>Tools</strong> — Functions the AI can call (e.g., &ldquo;search database&rdquo;, &ldquo;create file&rdquo;, &ldquo;send email&rdquo;)</li><li><strong>Resources</strong> — Data the AI can read (e.g., file contents, database records, API responses)</li><li><strong>Prompts</strong> — Reusable prompt templates with dynamic arguments</li></ol><p>The key insight: <strong>the server defines what&rsquo;s available, the client (AI host) decides when to use it.</strong> This separation of concerns is what makes the protocol so powerful.</p><h2 id=why-mcp-matters-more-than-you-think>Why MCP Matters More Than You Think</h2><h3 id=before-mcp-the-integration-nightmare>Before MCP: The Integration Nightmare</h3><p>Every AI platform required custom integrations:</p><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">30
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#75715e># LangChain tool</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>class</span> <span style=color:#a6e22e>SearchTool</span>(BaseTool):
+</span></span><span style=display:flex><span>    name <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;search&#34;</span>
+</span></span><span style=display:flex><span>    description <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;Search the database&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>_run</span>(self, query: str) <span style=color:#f92672>-&gt;</span> str:
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> db<span style=color:#f92672>.</span>search(query)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># OpenAI function calling</span>
+</span></span><span style=display:flex><span>functions <span style=color:#f92672>=</span> [{
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;name&#34;</span>: <span style=color:#e6db74>&#34;search&#34;</span>,
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;description&#34;</span>: <span style=color:#e6db74>&#34;Search the database&#34;</span>,
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;parameters&#34;</span>: {
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>&#34;type&#34;</span>: <span style=color:#e6db74>&#34;object&#34;</span>,
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>&#34;properties&#34;</span>: {
+</span></span><span style=display:flex><span>            <span style=color:#e6db74>&#34;query&#34;</span>: {<span style=color:#e6db74>&#34;type&#34;</span>: <span style=color:#e6db74>&#34;string&#34;</span>}
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>}]
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># Anthropic tool use</span>
+</span></span><span style=display:flex><span>tools <span style=color:#f92672>=</span> [{
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;name&#34;</span>: <span style=color:#e6db74>&#34;search&#34;</span>,
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;description&#34;</span>: <span style=color:#e6db74>&#34;Search the database&#34;</span>,
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;input_schema&#34;</span>: {
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>&#34;type&#34;</span>: <span style=color:#e6db74>&#34;object&#34;</span>,
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>&#34;properties&#34;</span>: {
+</span></span><span style=display:flex><span>            <span style=color:#e6db74>&#34;query&#34;</span>: {<span style=color:#e6db74>&#34;type&#34;</span>: <span style=color:#e6db74>&#34;string&#34;</span>}
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>}]
+</span></span></code></pre></td></tr></table></div></div><p>Three different formats for the <strong>exact same capability.</strong> If you wanted your tool to work across platforms, you maintained three integrations.</p><h3 id=after-mcp-write-once-run-everywhere>After MCP: Write Once, Run Everywhere</h3><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#75715e># One MCP server works with every MCP-compatible client</span>
+</span></span><span style=display:flex><span><span style=color:#f92672>from</span> mcp.server <span style=color:#f92672>import</span> Server
+</span></span><span style=display:flex><span><span style=color:#f92672>from</span> mcp.types <span style=color:#f92672>import</span> Tool
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>server <span style=color:#f92672>=</span> Server(<span style=color:#e6db74>&#34;my-search-server&#34;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>@server.tool</span>(<span style=color:#e6db74>&#34;search&#34;</span>)
+</span></span><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>search</span>(query: str) <span style=color:#f92672>-&gt;</span> str:
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;&#34;&#34;Search the database for relevant documents.&#34;&#34;&#34;</span>
+</span></span><span style=display:flex><span>    results <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> db<span style=color:#f92672>.</span>search(query)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> format_results(results)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># That&#39;s it. This works with Claude, Copilot, Cursor,</span>
+</span></span><span style=display:flex><span><span style=color:#75715e># and any other MCP-compatible host.</span>
+</span></span></code></pre></td></tr></table></div></div><h2 id=building-your-first-mcp-server>Building Your First MCP Server</h2><p>Let&rsquo;s build a practical MCP server that gives an AI agent access to your project&rsquo;s documentation and configuration.</p><h3 id=step-1-project-setup>Step 1: Project Setup</h3><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">3
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-bash data-lang=bash><span style=display:flex><span>mkdir my-docs-server <span style=color:#f92672>&amp;&amp;</span> cd my-docs-server
+</span></span><span style=display:flex><span>npm init -y
+</span></span><span style=display:flex><span>npm install @modelcontextprotocol/sdk
+</span></span></code></pre></td></tr></table></div></div><h3 id=step-2-implement-the-server>Step 2: Implement the Server</h3><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">30
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">31
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">32
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">33
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">34
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">35
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">36
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">37
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">38
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">39
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">40
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">41
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">42
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">43
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">44
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">45
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">46
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">47
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">48
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">49
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">50
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">51
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">52
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">53
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">54
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">55
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">56
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">57
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">58
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">59
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">60
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">61
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">62
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">63
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">64
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">65
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">66
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">67
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">68
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">69
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">70
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">71
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">72
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">73
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">74
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">75
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">76
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">77
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">78
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">79
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">80
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">81
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">82
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">83
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-typescript data-lang=typescript><span style=display:flex><span><span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>McpServer</span> } <span style=color:#66d9ef>from</span> <span style=color:#e6db74>&#34;@modelcontextprotocol/sdk/server/mcp.js&#34;</span>;
+</span></span><span style=display:flex><span><span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>StdioServerTransport</span> } <span style=color:#66d9ef>from</span> <span style=color:#e6db74>&#34;@modelcontextprotocol/sdk/server/stdio.js&#34;</span>;
+</span></span><span style=display:flex><span><span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>z</span> } <span style=color:#66d9ef>from</span> <span style=color:#e6db74>&#34;zod&#34;</span>;
+</span></span><span style=display:flex><span><span style=color:#66d9ef>import</span> <span style=color:#f92672>*</span> <span style=color:#66d9ef>as</span> <span style=color:#a6e22e>fs</span> <span style=color:#66d9ef>from</span> <span style=color:#e6db74>&#34;fs/promises&#34;</span>;
+</span></span><span style=display:flex><span><span style=color:#66d9ef>import</span> <span style=color:#f92672>*</span> <span style=color:#66d9ef>as</span> <span style=color:#a6e22e>path</span> <span style=color:#66d9ef>from</span> <span style=color:#e6db74>&#34;path&#34;</span>;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>const</span> <span style=color:#a6e22e>server</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>new</span> <span style=color:#a6e22e>McpServer</span>({
+</span></span><span style=display:flex><span>  <span style=color:#a6e22e>name</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#34;project-docs&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:#a6e22e>version</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#34;1.0.0&#34;</span>,
+</span></span><span style=display:flex><span>});
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// Tool: Search documentation files
+</span></span></span><span style=display:flex><span><span style=color:#a6e22e>server</span>.<span style=color:#a6e22e>tool</span>(
+</span></span><span style=display:flex><span>  <span style=color:#e6db74>&#34;search_docs&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:#e6db74>&#34;Search project documentation by keyword&#34;</span>,
+</span></span><span style=display:flex><span>  { <span style=color:#a6e22e>query</span>: <span style=color:#66d9ef>z.string</span>().<span style=color:#a6e22e>describe</span>(<span style=color:#e6db74>&#34;Search keyword or phrase&#34;</span>) },
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>async</span> ({ <span style=color:#a6e22e>query</span> }) <span style=color:#f92672>=&gt;</span> {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>docsDir</span> <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;./docs&#34;</span>;
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>files</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>fs</span>.<span style=color:#a6e22e>readdir</span>(<span style=color:#a6e22e>docsDir</span>, { <span style=color:#a6e22e>recursive</span>: <span style=color:#66d9ef>true</span> });
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>results</span> <span style=color:#f92672>=</span> [];
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> (<span style=color:#66d9ef>const</span> <span style=color:#a6e22e>file</span> <span style=color:#66d9ef>of</span> <span style=color:#a6e22e>files</span>) {
+</span></span><span style=display:flex><span>      <span style=color:#66d9ef>if</span> (<span style=color:#f92672>!</span><span style=color:#a6e22e>file</span>.<span style=color:#a6e22e>toString</span>().<span style=color:#a6e22e>endsWith</span>(<span style=color:#e6db74>&#34;.md&#34;</span>)) <span style=color:#66d9ef>continue</span>;
+</span></span><span style=display:flex><span>      <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>content</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>fs</span>.<span style=color:#a6e22e>readFile</span>(
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>path</span>.<span style=color:#a6e22e>join</span>(<span style=color:#a6e22e>docsDir</span>, <span style=color:#a6e22e>file</span>.<span style=color:#a6e22e>toString</span>()), <span style=color:#e6db74>&#34;utf-8&#34;</span>
+</span></span><span style=display:flex><span>      );
+</span></span><span style=display:flex><span>      <span style=color:#66d9ef>if</span> (<span style=color:#a6e22e>content</span>.<span style=color:#a6e22e>toLowerCase</span>().<span style=color:#a6e22e>includes</span>(<span style=color:#a6e22e>query</span>.<span style=color:#a6e22e>toLowerCase</span>())) {
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>lines</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>content</span>.<span style=color:#a6e22e>split</span>(<span style=color:#e6db74>&#34;\n&#34;</span>);
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>matchingLines</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>lines</span>.<span style=color:#a6e22e>filter</span>(<span style=color:#a6e22e>l</span> <span style=color:#f92672>=&gt;</span>
+</span></span><span style=display:flex><span>          <span style=color:#a6e22e>l</span>.<span style=color:#a6e22e>toLowerCase</span>().<span style=color:#a6e22e>includes</span>(<span style=color:#a6e22e>query</span>.<span style=color:#a6e22e>toLowerCase</span>())
+</span></span><span style=display:flex><span>        );
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>results</span>.<span style=color:#a6e22e>push</span>({
+</span></span><span style=display:flex><span>          <span style=color:#a6e22e>file</span>: <span style=color:#66d9ef>file.toString</span>(),
+</span></span><span style=display:flex><span>          <span style=color:#a6e22e>matches</span>: <span style=color:#66d9ef>matchingLines.slice</span>(<span style=color:#ae81ff>0</span>, <span style=color:#ae81ff>3</span>)
+</span></span><span style=display:flex><span>        });
+</span></span><span style=display:flex><span>      }
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> {
+</span></span><span style=display:flex><span>      <span style=color:#a6e22e>content</span><span style=color:#f92672>:</span> [{
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>type</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#34;text&#34;</span> <span style=color:#66d9ef>as</span> <span style=color:#66d9ef>const</span>,
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>text</span>: <span style=color:#66d9ef>JSON.stringify</span>(<span style=color:#a6e22e>results</span>, <span style=color:#66d9ef>null</span>, <span style=color:#ae81ff>2</span>)
+</span></span><span style=display:flex><span>      }]
+</span></span><span style=display:flex><span>    };
+</span></span><span style=display:flex><span>  }
+</span></span><span style=display:flex><span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// Tool: Get project configuration
+</span></span></span><span style=display:flex><span><span style=color:#a6e22e>server</span>.<span style=color:#a6e22e>tool</span>(
+</span></span><span style=display:flex><span>  <span style=color:#e6db74>&#34;get_config&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:#e6db74>&#34;Read the project configuration file&#34;</span>,
+</span></span><span style=display:flex><span>  { <span style=color:#a6e22e>configFile</span>: <span style=color:#66d9ef>z.string</span>().<span style=color:#66d9ef>default</span>(<span style=color:#e6db74>&#34;package.json&#34;</span>) },
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>async</span> ({ <span style=color:#a6e22e>configFile</span> }) <span style=color:#f92672>=&gt;</span> {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>content</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>fs</span>.<span style=color:#a6e22e>readFile</span>(<span style=color:#a6e22e>configFile</span>, <span style=color:#e6db74>&#34;utf-8&#34;</span>);
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> {
+</span></span><span style=display:flex><span>      <span style=color:#a6e22e>content</span><span style=color:#f92672>:</span> [{
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>type</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#34;text&#34;</span> <span style=color:#66d9ef>as</span> <span style=color:#66d9ef>const</span>,
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>text</span>: <span style=color:#66d9ef>content</span>
+</span></span><span style=display:flex><span>      }]
+</span></span><span style=display:flex><span>    };
+</span></span><span style=display:flex><span>  }
+</span></span><span style=display:flex><span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// Resource: List available documentation
+</span></span></span><span style=display:flex><span><span style=color:#a6e22e>server</span>.<span style=color:#a6e22e>resource</span>(
+</span></span><span style=display:flex><span>  <span style=color:#e6db74>&#34;docs://index&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:#e6db74>&#34;List of all documentation files&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>async</span> () <span style=color:#f92672>=&gt;</span> {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>docsDir</span> <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;./docs&#34;</span>;
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>files</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>fs</span>.<span style=color:#a6e22e>readdir</span>(<span style=color:#a6e22e>docsDir</span>, { <span style=color:#a6e22e>recursive</span>: <span style=color:#66d9ef>true</span> });
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>mdFiles</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>files</span>.<span style=color:#a6e22e>filter</span>(<span style=color:#a6e22e>f</span> <span style=color:#f92672>=&gt;</span> <span style=color:#a6e22e>f</span>.<span style=color:#a6e22e>toString</span>().<span style=color:#a6e22e>endsWith</span>(<span style=color:#e6db74>&#34;.md&#34;</span>));
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> {
+</span></span><span style=display:flex><span>      <span style=color:#a6e22e>contents</span><span style=color:#f92672>:</span> [{
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>uri</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#34;docs://index&#34;</span>,
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>text</span>: <span style=color:#66d9ef>mdFiles.join</span>(<span style=color:#e6db74>&#34;\n&#34;</span>),
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>mimeType</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#34;text/plain&#34;</span>
+</span></span><span style=display:flex><span>      }]
+</span></span><span style=display:flex><span>    };
+</span></span><span style=display:flex><span>  }
+</span></span><span style=display:flex><span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>const</span> <span style=color:#a6e22e>transport</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>new</span> <span style=color:#a6e22e>StdioServerTransport</span>();
+</span></span><span style=display:flex><span><span style=color:#66d9ef>await</span> <span style=color:#a6e22e>server</span>.<span style=color:#a6e22e>connect</span>(<span style=color:#a6e22e>transport</span>);
+</span></span></code></pre></td></tr></table></div></div><h3 id=step-3-register-with-your-ai-client>Step 3: Register with Your AI Client</h3><p>Add to your MCP client configuration (e.g., Claude Desktop):</p><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-json data-lang=json><span style=display:flex><span>{
+</span></span><span style=display:flex><span>  <span style=color:#f92672>&#34;mcpServers&#34;</span>: {
+</span></span><span style=display:flex><span>    <span style=color:#f92672>&#34;project-docs&#34;</span>: {
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;command&#34;</span>: <span style=color:#e6db74>&#34;node&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;args&#34;</span>: [<span style=color:#e6db74>&#34;./my-docs-server/index.js&#34;</span>],
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;env&#34;</span>: {
+</span></span><span style=display:flex><span>        <span style=color:#f92672>&#34;DOCS_PATH&#34;</span>: <span style=color:#e6db74>&#34;/path/to/your/project/docs&#34;</span>
+</span></span><span style=display:flex><span>      }
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>  }
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></td></tr></table></div></div><p>Now any AI assistant connected via MCP can search your documentation and read your config files natively.</p><h2 id=real-world-mcp-server-patterns>Real-World MCP Server Patterns</h2><h3 id=pattern-1-database-access-layer>Pattern 1: Database Access Layer</h3><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-typescript data-lang=typescript><span style=display:flex><span><span style=color:#a6e22e>server</span>.<span style=color:#a6e22e>tool</span>(
+</span></span><span style=display:flex><span>  <span style=color:#e6db74>&#34;query_database&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:#e6db74>&#34;Run a read-only SQL query against the application database&#34;</span>,
+</span></span><span style=display:flex><span>  {
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>query</span>: <span style=color:#66d9ef>z.string</span>().<span style=color:#a6e22e>describe</span>(<span style=color:#e6db74>&#34;SQL SELECT query&#34;</span>),
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>limit</span>: <span style=color:#66d9ef>z.number</span>().<span style=color:#66d9ef>default</span>(<span style=color:#ae81ff>10</span>).<span style=color:#a6e22e>describe</span>(<span style=color:#e6db74>&#34;Max rows to return&#34;</span>)
+</span></span><span style=display:flex><span>  },
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>async</span> ({ <span style=color:#a6e22e>query</span>, <span style=color:#a6e22e>limit</span> }) <span style=color:#f92672>=&gt;</span> {
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// Safety: only allow SELECT statements
+</span></span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> (<span style=color:#f92672>!</span><span style=color:#a6e22e>query</span>.<span style=color:#a6e22e>trim</span>().<span style=color:#a6e22e>toUpperCase</span>().<span style=color:#a6e22e>startsWith</span>(<span style=color:#e6db74>&#34;SELECT&#34;</span>)) {
+</span></span><span style=display:flex><span>      <span style=color:#66d9ef>return</span> {
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>content</span><span style=color:#f92672>:</span> [{ <span style=color:#66d9ef>type</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#34;text&#34;</span>, <span style=color:#a6e22e>text</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#34;Error: Only SELECT queries allowed&#34;</span> }],
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>isError</span>: <span style=color:#66d9ef>true</span>
+</span></span><span style=display:flex><span>      };
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>results</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>db</span>.<span style=color:#a6e22e>query</span>(<span style=color:#e6db74>`</span><span style=color:#e6db74>${</span><span style=color:#a6e22e>query</span><span style=color:#e6db74>}</span><span style=color:#e6db74> LIMIT </span><span style=color:#e6db74>${</span><span style=color:#a6e22e>limit</span><span style=color:#e6db74>}</span><span style=color:#e6db74>`</span>);
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> {
+</span></span><span style=display:flex><span>      <span style=color:#a6e22e>content</span><span style=color:#f92672>:</span> [{ <span style=color:#66d9ef>type</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#34;text&#34;</span>, <span style=color:#a6e22e>text</span>: <span style=color:#66d9ef>JSON.stringify</span>(<span style=color:#a6e22e>results</span>, <span style=color:#66d9ef>null</span>, <span style=color:#ae81ff>2</span>) }]
+</span></span><span style=display:flex><span>    };
+</span></span><span style=display:flex><span>  }
+</span></span><span style=display:flex><span>);
+</span></span></code></pre></td></tr></table></div></div><h3 id=pattern-2-cicd-integration>Pattern 2: CI/CD Integration</h3><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-typescript data-lang=typescript><span style=display:flex><span><span style=color:#a6e22e>server</span>.<span style=color:#a6e22e>tool</span>(
+</span></span><span style=display:flex><span>  <span style=color:#e6db74>&#34;get_build_status&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:#e6db74>&#34;Get the status of the latest CI/CD build&#34;</span>,
+</span></span><span style=display:flex><span>  { <span style=color:#a6e22e>branch</span>: <span style=color:#66d9ef>z.string</span>().<span style=color:#66d9ef>default</span>(<span style=color:#e6db74>&#34;main&#34;</span>) },
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>async</span> ({ <span style=color:#a6e22e>branch</span> }) <span style=color:#f92672>=&gt;</span> {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>build</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>ciClient</span>.<span style=color:#a6e22e>getLatestBuild</span>(<span style=color:#a6e22e>branch</span>);
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> {
+</span></span><span style=display:flex><span>      <span style=color:#a6e22e>content</span><span style=color:#f92672>:</span> [{
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>type</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#34;text&#34;</span>,
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>text</span><span style=color:#f92672>:</span> <span style=color:#e6db74>`Build #</span><span style=color:#e6db74>${</span><span style=color:#a6e22e>build</span>.<span style=color:#a6e22e>id</span><span style=color:#e6db74>}</span><span style=color:#e6db74>: </span><span style=color:#e6db74>${</span><span style=color:#a6e22e>build</span>.<span style=color:#a6e22e>status</span><span style=color:#e6db74>}</span><span style=color:#960050;background-color:#1e0010>\</span><span style=color:#e6db74>n`</span> <span style=color:#f92672>+</span>
+</span></span><span style=display:flex><span>              <span style=color:#e6db74>`Duration: </span><span style=color:#e6db74>${</span><span style=color:#a6e22e>build</span>.<span style=color:#a6e22e>duration</span><span style=color:#e6db74>}</span><span style=color:#e6db74>s</span><span style=color:#960050;background-color:#1e0010>\</span><span style=color:#e6db74>n`</span> <span style=color:#f92672>+</span>
+</span></span><span style=display:flex><span>              <span style=color:#e6db74>`Triggered by: </span><span style=color:#e6db74>${</span><span style=color:#a6e22e>build</span>.<span style=color:#a6e22e>trigger</span><span style=color:#e6db74>}</span><span style=color:#960050;background-color:#1e0010>\</span><span style=color:#e6db74>n`</span> <span style=color:#f92672>+</span>
+</span></span><span style=display:flex><span>              <span style=color:#e6db74>`</span><span style=color:#e6db74>${</span><span style=color:#a6e22e>build</span>.<span style=color:#a6e22e>status</span> <span style=color:#f92672>===</span> <span style=color:#e6db74>&#39;failed&#39;</span> <span style=color:#f92672>?</span> <span style=color:#e6db74>`Error: </span><span style=color:#e6db74>${</span><span style=color:#a6e22e>build</span>.<span style=color:#a6e22e>error</span><span style=color:#e6db74>}</span><span style=color:#e6db74>`</span> <span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;&#39;</span><span style=color:#e6db74>}</span><span style=color:#e6db74>`</span>
+</span></span><span style=display:flex><span>      }]
+</span></span><span style=display:flex><span>    };
+</span></span><span style=display:flex><span>  }
+</span></span><span style=display:flex><span>);
+</span></span></code></pre></td></tr></table></div></div><h3 id=pattern-3-monitoring-and-alerts>Pattern 3: Monitoring and Alerts</h3><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-typescript data-lang=typescript><span style=display:flex><span><span style=color:#a6e22e>server</span>.<span style=color:#a6e22e>tool</span>(
+</span></span><span style=display:flex><span>  <span style=color:#e6db74>&#34;check_service_health&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:#e6db74>&#34;Check the health status of production services&#34;</span>,
+</span></span><span style=display:flex><span>  { <span style=color:#a6e22e>service</span>: <span style=color:#66d9ef>z.string</span>().<span style=color:#a6e22e>optional</span>() },
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>async</span> ({ <span style=color:#a6e22e>service</span> }) <span style=color:#f92672>=&gt;</span> {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>health</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>service</span>
+</span></span><span style=display:flex><span>      <span style=color:#f92672>?</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>monitoring</span>.<span style=color:#a6e22e>getServiceHealth</span>(<span style=color:#a6e22e>service</span>)
+</span></span><span style=display:flex><span>      <span style=color:#f92672>:</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>monitoring</span>.<span style=color:#a6e22e>getAllServicesHealth</span>();
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> {
+</span></span><span style=display:flex><span>      <span style=color:#a6e22e>content</span><span style=color:#f92672>:</span> [{
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>type</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#34;text&#34;</span>,
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>text</span>: <span style=color:#66d9ef>JSON.stringify</span>(<span style=color:#a6e22e>health</span>, <span style=color:#66d9ef>null</span>, <span style=color:#ae81ff>2</span>)
+</span></span><span style=display:flex><span>      }]
+</span></span><span style=display:flex><span>    };
+</span></span><span style=display:flex><span>  }
+</span></span><span style=display:flex><span>);
+</span></span></code></pre></td></tr></table></div></div><h2 id=the-mcp-ecosystem-in-2026>The MCP Ecosystem in 2026</h2><p>The ecosystem has grown rapidly. Here&rsquo;s what&rsquo;s available:</p><table><thead><tr><th>Category</th><th>Notable MCP Servers</th></tr></thead><tbody><tr><td>Databases</td><td>PostgreSQL, MySQL, MongoDB, Redis</td></tr><tr><td>Cloud</td><td>AWS, Azure, GCP resource management</td></tr><tr><td>DevOps</td><td>GitHub, GitLab, Jenkins, ArgoCD</td></tr><tr><td>Monitoring</td><td>Datadog, Grafana, PagerDuty</td></tr><tr><td>Communication</td><td>Slack, Discord, Email</td></tr><tr><td>File Systems</td><td>Local FS, S3, Google Drive</td></tr><tr><td>Search</td><td>Elasticsearch, Algolia, web search</td></tr><tr><td>Custom</td><td>Your own tools via the SDK</td></tr></tbody></table><h2 id=security-considerations>Security Considerations</h2><p>MCP servers have access to real systems, so security matters:</p><ol><li><strong>Principle of least privilege</strong> — Only expose the minimum necessary tools</li><li><strong>Read-only by default</strong> — Require explicit opt-in for write operations</li><li><strong>Input validation</strong> — Use Zod schemas to validate all inputs strictly</li><li><strong>Audit logging</strong> — Log every tool invocation with parameters and results</li><li><strong>Sandboxing</strong> — Run MCP servers with restricted filesystem and network access</li></ol><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-typescript data-lang=typescript><span style=display:flex><span><span style=color:#75715e>// Good: Explicit read-only constraint
+</span></span></span><span style=display:flex><span><span style=color:#a6e22e>server</span>.<span style=color:#a6e22e>tool</span>(<span style=color:#e6db74>&#34;search&#34;</span>, <span style=color:#e6db74>&#34;Read-only search&#34;</span>, { <span style=color:#a6e22e>query</span>: <span style=color:#66d9ef>z.string</span>() },
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>async</span> ({ <span style=color:#a6e22e>query</span> }) <span style=color:#f92672>=&gt;</span> {
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// Uses a read-only database connection
+</span></span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>readOnlyDb</span>.<span style=color:#a6e22e>search</span>(<span style=color:#a6e22e>query</span>);
+</span></span><span style=display:flex><span>  }
+</span></span><span style=display:flex><span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// Bad: Unrestricted access
+</span></span></span><span style=display:flex><span><span style=color:#a6e22e>server</span>.<span style=color:#a6e22e>tool</span>(<span style=color:#e6db74>&#34;execute&#34;</span>, <span style=color:#e6db74>&#34;Run anything&#34;</span>, { <span style=color:#a6e22e>command</span>: <span style=color:#66d9ef>z.string</span>() },
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>async</span> ({ <span style=color:#a6e22e>command</span> }) <span style=color:#f92672>=&gt;</span> {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>exec</span>(<span style=color:#a6e22e>command</span>);  <span style=color:#75715e>// 🚨 Never do this
+</span></span></span><span style=display:flex><span>  }
+</span></span><span style=display:flex><span>);
+</span></span></code></pre></td></tr></table></div></div><h2 id=the-bottom-line>The Bottom Line</h2><p>MCP is the plugin architecture that the AI agent ecosystem desperately needed. Instead of building brittle, platform-specific integrations, you build one MCP server and it works everywhere.</p><p>If you maintain any internal tools, APIs, or services, wrapping them in an MCP server is one of the highest-leverage things you can do right now. Your AI assistants become dramatically more useful when they can actually interact with your real infrastructure.</p><p>Start with one server. Expose one tool. Watch how it transforms your AI-assisted workflow.</p><hr><p><em>Content Empire covers the tools and protocols shaping the future of AI development. Follow for practical, no-hype coverage.</em></p></div><footer class=post-footer><p><strong>Enjoyed this article?</strong> Follow Content Empire for more developer content.</p></footer></article></main><footer class=footer><div class=container><p>&copy; 2026 Content Empire. Build. Publish. Dominate.</p></div></footer></body></html>

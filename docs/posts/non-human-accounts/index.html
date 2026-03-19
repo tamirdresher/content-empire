@@ -1,0 +1,205 @@
+<!doctype html><html lang=en><head><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Why Your Side Project Needs a Non-Human Account | Content Empire</title><meta name=description content="Using personal accounts for CI/CD, deployments, and automation is a ticking time bomb. Here's how to set up non-human (service) accounts properly — even for hobby projects."><link rel=stylesheet href=https://tamirdresher.github.io/content-empire/css/style.css><link rel=preconnect href=https://fonts.googleapis.com><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono&display=swap" rel=stylesheet></head><body><nav class=navbar><div class=container><a href=https://tamirdresher.github.io/content-empire/ class=logo>⚡ Content Empire</a><div class=nav-links><a href=https://tamirdresher.github.io/content-empire/posts/>Articles</a>
+<a href=https://tamirdresher.github.io/content-empire/courses/>Courses</a>
+<a href=https://tamirdresher.github.io/content-empire/pages/about/>About</a></div></div></nav><main class=container><article class=post-single><header class=post-header><h1>Why Your Side Project Needs a Non-Human Account</h1><div class=post-meta><time>July 26, 2025</time>
+· By The Content Empire Team
+· 6 min read</div><div class=post-tags><span class=tag>DevOps</span> <span class=tag>automation</span> <span class=tag>security</span> <span class=tag>side-projects</span> <span class=tag>best-practices</span></div></header><div class=post-content><p>You built a side project. It has CI/CD, automated deployments, maybe a Discord bot or a scheduled data pipeline. And every single one of those automations runs under <strong>your personal account.</strong> Your personal GitHub token, your personal API key, your personal email.</p><p>This is fine until it isn&rsquo;t. And when it breaks, it breaks spectacularly.</p><h2 id=the-horror-stories>The Horror Stories</h2><p>Every experienced developer has a version of this story:</p><p><strong>&ldquo;I rotated my personal GitHub token and broke 4 production services.&rdquo;</strong> The token was embedded in CI configs, webhook URLs, and deployment scripts across multiple repos. Everything stopped at once.</p><p><strong>&ldquo;I left the company and the nightly data pipeline died.&rdquo;</strong> It used the developer&rsquo;s personal database credentials. Nobody knew until customers started complaining about stale data three days later.</p><p><strong>&ldquo;My personal API key hit the rate limit because my side project went viral.&rdquo;</strong> The same key was used for both the production app and personal experiments. One success killed both.</p><h2 id=what-is-a-non-human-account>What Is a Non-Human Account?</h2><p>A non-human account (also called a service account, bot account, or machine identity) is an account that represents your application or automation rather than a person. It has its own:</p><ul><li><strong>Credentials</strong> — API keys, tokens, SSH keys</li><li><strong>Permissions</strong> — Scoped to exactly what the automation needs</li><li><strong>Identity</strong> — Commits, deploys, and actions are attributed to the bot, not you</li><li><strong>Lifecycle</strong> — Independent of any individual contributor</li></ul><h2 id=why-even-side-projects-need-one>Why Even Side Projects Need One</h2><h3 id=1-credential-isolation>1. Credential Isolation</h3><p>Your personal token typically has permissions far beyond what your CI/CD needs:</p><pre tabindex=0><code>Your personal GitHub token permissions:
+✅ Read/write all repositories (public and private)
+✅ Manage organizations
+✅ Delete repositories
+✅ Admin access to all settings
+
+What your CI pipeline actually needs:
+✅ Read/write to ONE specific repository
+✅ Create releases
+❌ Everything else
+</code></pre><p>If your CI token leaks (and CI logs leak tokens more often than you&rsquo;d think), the blast radius of a scoped bot token is dramatically smaller.</p><h3 id=2-audit-trail-clarity>2. Audit Trail Clarity</h3><p>When every automated action is attributed to your personal account, your git log becomes a mess:</p><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">7
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-bash data-lang=bash><span style=display:flex><span><span style=color:#75715e># ❌ Confusing: Which of these did I actually write?</span>
+</span></span><span style=display:flex><span>$ git log --oneline
+</span></span><span style=display:flex><span>a1b2c3d Update dependencies <span style=color:#f92672>(</span>me<span style=color:#f92672>)</span>
+</span></span><span style=display:flex><span>d4e5f6g Deploy to production <span style=color:#f92672>(</span>me<span style=color:#f92672>)</span>
+</span></span><span style=display:flex><span>g7h8i9j Fix typo in README <span style=color:#f92672>(</span>me<span style=color:#f92672>)</span>
+</span></span><span style=display:flex><span>j0k1l2m Auto-format code <span style=color:#f92672>(</span>me<span style=color:#f92672>)</span>
+</span></span><span style=display:flex><span>m3n4o5p Bump version to 2.1.0 <span style=color:#f92672>(</span>me<span style=color:#f92672>)</span>
+</span></span></code></pre></td></tr></table></div></div><p>With a bot account:</p><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">7
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-bash data-lang=bash><span style=display:flex><span><span style=color:#75715e># ✅ Clear: Humans vs. automation are immediately obvious</span>
+</span></span><span style=display:flex><span>$ git log --oneline
+</span></span><span style=display:flex><span>a1b2c3d Fix typo in README <span style=color:#f92672>(</span>me<span style=color:#f92672>)</span>
+</span></span><span style=display:flex><span>d4e5f6g Auto-format code <span style=color:#f92672>(</span>content-empire-bot<span style=color:#f92672>)</span>
+</span></span><span style=display:flex><span>g7h8i9j Deploy to production <span style=color:#f92672>(</span>content-empire-bot<span style=color:#f92672>)</span>
+</span></span><span style=display:flex><span>j0k1l2m Update dependencies <span style=color:#f92672>(</span>content-empire-bot<span style=color:#f92672>)</span>
+</span></span><span style=display:flex><span>m3n4o5p Bump version to 2.1.0 <span style=color:#f92672>(</span>content-empire-bot<span style=color:#f92672>)</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=3-token-rotation-without-downtime>3. Token Rotation Without Downtime</h3><p>When it&rsquo;s time to rotate credentials (and you should do this regularly), rotating a bot token affects only automations. Rotating your personal token affects everything you do — IDE, CLI, browser, and every automation you&rsquo;ve hooked up.</p><h3 id=4-portability>4. Portability</h3><p>If you bring on a collaborator, transfer the project, or create an organization, bot accounts just keep working. Personal accounts create awkward situations: &ldquo;Hey, can you not change your password? It&rsquo;ll break our deployment.&rdquo;</p><h2 id=setting-it-up-a-practical-guide>Setting It Up: A Practical Guide</h2><h3 id=github-machine-user--fine-grained-token>GitHub: Machine User + Fine-Grained Token</h3><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-bash data-lang=bash><span style=display:flex><span><span style=color:#75715e># 1. Create a new GitHub account for your project</span>
+</span></span><span style=display:flex><span><span style=color:#75715e>#    (e.g., &#34;myproject-bot@protonmail.com&#34;)</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># 2. Generate a fine-grained personal access token</span>
+</span></span><span style=display:flex><span><span style=color:#75715e>#    Settings → Developer settings → Fine-grained tokens</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># 3. Scope it tightly:</span>
+</span></span><span style=display:flex><span><span style=color:#75715e>#    - Repository access: Only select repositories</span>
+</span></span><span style=display:flex><span><span style=color:#75715e>#    - Permissions:</span>
+</span></span><span style=display:flex><span><span style=color:#75715e>#      - Contents: Read and write (for pushing code)</span>
+</span></span><span style=display:flex><span><span style=color:#75715e>#      - Pull requests: Read and write (for PR automation)</span>
+</span></span><span style=display:flex><span><span style=color:#75715e>#      - Actions: Read (for checking CI status)</span>
+</span></span><span style=display:flex><span><span style=color:#75715e>#      - Metadata: Read (required)</span>
+</span></span></code></pre></td></tr></table></div></div><p>For GitHub Actions specifically, prefer the built-in <code>GITHUB_TOKEN</code> or deploy keys:</p><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-yaml data-lang=yaml><span style=display:flex><span><span style=color:#75715e># .github/workflows/deploy.yml</span>
+</span></span><span style=display:flex><span><span style=color:#f92672>jobs</span>:
+</span></span><span style=display:flex><span>  <span style=color:#f92672>deploy</span>:
+</span></span><span style=display:flex><span>    <span style=color:#f92672>runs-on</span>: <span style=color:#ae81ff>ubuntu-latest</span>
+</span></span><span style=display:flex><span>    <span style=color:#f92672>permissions</span>:
+</span></span><span style=display:flex><span>      <span style=color:#f92672>contents</span>: <span style=color:#ae81ff>read</span>
+</span></span><span style=display:flex><span>      <span style=color:#f92672>pages</span>: <span style=color:#ae81ff>write</span>
+</span></span><span style=display:flex><span>      <span style=color:#f92672>id-token</span>: <span style=color:#ae81ff>write</span>
+</span></span><span style=display:flex><span>    <span style=color:#f92672>steps</span>:
+</span></span><span style=display:flex><span>      <span style=color:#75715e># Uses the automatic GITHUB_TOKEN — no personal credentials needed</span>
+</span></span><span style=display:flex><span>      - <span style=color:#f92672>uses</span>: <span style=color:#ae81ff>actions/checkout@v4</span>
+</span></span><span style=display:flex><span>      - <span style=color:#f92672>run</span>: <span style=color:#ae81ff>npm run build</span>
+</span></span><span style=display:flex><span>      - <span style=color:#f92672>uses</span>: <span style=color:#ae81ff>actions/deploy-pages@v4</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=api-keys-separate-project-keys>API Keys: Separate Project Keys</h3><p>Most services let you create multiple API keys. Create one per project:</p><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">9
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-bash data-lang=bash><span style=display:flex><span><span style=color:#75715e># ❌ Don&#39;t: One key for everything</span>
+</span></span><span style=display:flex><span>OPENAI_API_KEY<span style=color:#f92672>=</span>sk-personal-key-for-everything
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># ✅ Do: Separate keys per project</span>
+</span></span><span style=display:flex><span><span style=color:#75715e># In your side project&#39;s .env:</span>
+</span></span><span style=display:flex><span>OPENAI_API_KEY<span style=color:#f92672>=</span>sk-proj-myproject-scoped-key
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># In your experiments:</span>
+</span></span><span style=display:flex><span>OPENAI_API_KEY<span style=color:#f92672>=</span>sk-proj-experiments-sandbox
+</span></span></code></pre></td></tr></table></div></div><h3 id=secrets-management>Secrets Management</h3><p>Even for side projects, don&rsquo;t hardcode secrets:</p><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">9
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-bash data-lang=bash><span style=display:flex><span><span style=color:#75715e># Option 1: GitHub Secrets (free, built into Actions)</span>
+</span></span><span style=display:flex><span><span style=color:#75715e># Settings → Secrets → Actions → New repository secret</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># Option 2: .env files (local development)</span>
+</span></span><span style=display:flex><span>echo <span style=color:#e6db74>&#34;API_KEY=sk-secret&#34;</span> &gt;&gt; .env
+</span></span><span style=display:flex><span>echo <span style=color:#e6db74>&#34;.env&#34;</span> &gt;&gt; .gitignore
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># Option 3: 1Password CLI (if you already use 1Password)</span>
+</span></span><span style=display:flex><span>op read <span style=color:#e6db74>&#34;op://Development/MyProject/API_KEY&#34;</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=git-commit-identity>Git Commit Identity</h3><p>Configure your bot&rsquo;s git identity separately:</p><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">6
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-bash data-lang=bash><span style=display:flex><span><span style=color:#75715e># In your CI/CD configuration:</span>
+</span></span><span style=display:flex><span>git config user.name <span style=color:#e6db74>&#34;MyProject Bot&#34;</span>
+</span></span><span style=display:flex><span>git config user.email <span style=color:#e6db74>&#34;myproject-bot@users.noreply.github.com&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># Commits are now attributed to the bot, not you</span>
+</span></span><span style=display:flex><span>git commit -m <span style=color:#e6db74>&#34;chore: automated dependency update&#34;</span>
+</span></span></code></pre></td></tr></table></div></div><h2 id=the-migration-checklist>The Migration Checklist</h2><p>If you already have automations running under your personal account, here&rsquo;s how to migrate:</p><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">30
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">31
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-markdown data-lang=markdown><span style=display:flex><span><span style=color:#75715e>## Non-Human Account Migration Checklist
+</span></span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>### Inventory
+</span></span></span><span style=display:flex><span><span style=color:#66d9ef>- [ ]</span> List all tokens/credentials used in CI/CD pipelines
+</span></span><span style=display:flex><span><span style=color:#66d9ef>- [ ]</span> List all API keys in environment variables/secrets
+</span></span><span style=display:flex><span><span style=color:#66d9ef>- [ ]</span> List all git commit identities configured in automation
+</span></span><span style=display:flex><span><span style=color:#66d9ef>- [ ]</span> List all webhook URLs using personal tokens
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>### Create Bot Identity
+</span></span></span><span style=display:flex><span><span style=color:#66d9ef>- [ ]</span> Create a dedicated email for the project bot
+</span></span><span style=display:flex><span><span style=color:#66d9ef>- [ ]</span> Create GitHub/GitLab account for the bot
+</span></span><span style=display:flex><span><span style=color:#66d9ef>- [ ]</span> Generate fine-grained tokens with minimal permissions
+</span></span><span style=display:flex><span><span style=color:#66d9ef>- [ ]</span> Create project-specific API keys for external services
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>### Migrate
+</span></span></span><span style=display:flex><span><span style=color:#66d9ef>- [ ]</span> Replace personal tokens in CI/CD secrets
+</span></span><span style=display:flex><span><span style=color:#66d9ef>- [ ]</span> Update webhook URLs with new bot tokens
+</span></span><span style=display:flex><span><span style=color:#66d9ef>- [ ]</span> Update git config in CI/CD to use bot identity
+</span></span><span style=display:flex><span><span style=color:#66d9ef>- [ ]</span> Update deployment scripts with new credentials
+</span></span><span style=display:flex><span><span style=color:#66d9ef>- [ ]</span> Test each pipeline after migration
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>### Verify
+</span></span></span><span style=display:flex><span><span style=color:#66d9ef>- [ ]</span> Confirm all CI/CD pipelines pass
+</span></span><span style=display:flex><span><span style=color:#66d9ef>- [ ]</span> Confirm deployments work with new credentials
+</span></span><span style=display:flex><span><span style=color:#66d9ef>- [ ]</span> Confirm git history shows bot identity for new automated commits
+</span></span><span style=display:flex><span><span style=color:#66d9ef>- [ ]</span> Revoke old personal tokens used in automation
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>### Document
+</span></span></span><span style=display:flex><span><span style=color:#66d9ef>- [ ]</span> Document where each credential is used
+</span></span><span style=display:flex><span><span style=color:#66d9ef>- [ ]</span> Document rotation schedule (at minimum: quarterly)
+</span></span><span style=display:flex><span><span style=color:#66d9ef>- [ ]</span> Set calendar reminders for token rotation
+</span></span></code></pre></td></tr></table></div></div><h2 id=cost-exactly-0>Cost: Exactly $0</h2><p>Here&rsquo;s the best part — this costs nothing for side projects:</p><ul><li><strong>GitHub machine user:</strong> Free (GitHub allows multiple accounts for bots)</li><li><strong>Fine-grained tokens:</strong> Free</li><li><strong>GitHub Actions secrets:</strong> Free</li><li><strong>Project-specific API keys:</strong> Free (most services allow multiple keys)</li><li><strong>Your time:</strong> ~30 minutes for initial setup</li></ul><p>Compare that to the cost of a leaked personal token: hours of incident response, potential data exposure, and the existential dread of wondering what an attacker did with admin access to all your repositories.</p><h2 id=the-bottom-line>The Bottom Line</h2><p>Using personal accounts for automation is the side project equivalent of technical debt — it works until the moment it doesn&rsquo;t, and then it costs you far more than doing it right would have.</p><p>Spend 30 minutes setting up a non-human account for your next project. Future you will be grateful.</p><hr><p><em>Content Empire helps developers build better infrastructure practices, even for side projects. Follow for practical guides with zero fluff.</em></p></div><footer class=post-footer><p><strong>Enjoyed this article?</strong> Follow Content Empire for more developer content.</p></footer></article></main><footer class=footer><div class=container><p>&copy; 2026 Content Empire. Build. Publish. Dominate.</p></div></footer></body></html>

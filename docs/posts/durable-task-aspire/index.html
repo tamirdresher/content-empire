@@ -1,0 +1,394 @@
+<!doctype html><html lang=en><head><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Durable Task Framework + Aspire: Orchestrating Microservices | Content Empire</title><meta name=description content="How to combine the Durable Task Framework with .NET Aspire to build reliable, observable microservice orchestrations that survive crashes and scale automatically."><link rel=stylesheet href=https://tamirdresher.github.io/content-empire/css/style.css><link rel=preconnect href=https://fonts.googleapis.com><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono&display=swap" rel=stylesheet></head><body><nav class=navbar><div class=container><a href=https://tamirdresher.github.io/content-empire/ class=logo>⚡ Content Empire</a><div class=nav-links><a href=https://tamirdresher.github.io/content-empire/posts/>Articles</a>
+<a href=https://tamirdresher.github.io/content-empire/courses/>Courses</a>
+<a href=https://tamirdresher.github.io/content-empire/pages/about/>About</a></div></div></nav><main class=container><article class=post-single><header class=post-header><h1>Durable Task Framework + Aspire: Orchestrating Microservices</h1><div class=post-meta><time>July 25, 2025</time>
+· By The Content Empire Team
+· 6 min read</div><div class=post-tags><span class=tag>dotnet</span> <span class=tag>microservices</span> <span class=tag>Aspire</span> <span class=tag>orchestration</span> <span class=tag>Durable-Task</span></div></header><div class=post-content><p>Microservice orchestration is one of those problems that sounds simple until you&rsquo;re debugging a distributed workflow at 2 AM. Service A called Service B, which timed out, so Service A retried, but Service B actually succeeded the first time, and now you have duplicate orders.</p><p>The <strong>Durable Task Framework (DTFx)</strong> solves this by making workflows durable — they survive crashes, retries, and scaling events. Combined with <strong>.NET Aspire</strong> for local development and observability, you get a development experience that&rsquo;s almost unreasonably pleasant.</p><h2 id=the-problem-fragile-orchestration>The Problem: Fragile Orchestration</h2><p>Consider a typical e-commerce order flow:</p><pre tabindex=0><code>Order Placed → Validate Inventory → Charge Payment → Ship Order → Send Confirmation
+</code></pre><p>In a naive implementation:</p><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">9
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-csharp data-lang=csharp><span style=display:flex><span><span style=color:#75715e>// ❌ Fragile: What happens if the service crashes after payment but before shipping?</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>public</span> <span style=color:#66d9ef>async</span> Task ProcessOrder(Order order)
+</span></span><span style=display:flex><span>{
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> inventoryService.Reserve(order.Items);
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> paymentService.Charge(order.PaymentInfo);
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 💥 Crash here = charged but never shipped</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> shippingService.CreateShipment(order);
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> notificationService.SendConfirmation(order);
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></td></tr></table></div></div><p>If the process crashes after charging the payment but before creating the shipment, you&rsquo;ve charged the customer but never shipped their order. Retrying from scratch would double-charge them.</p><h2 id=enter-the-durable-task-framework>Enter the Durable Task Framework</h2><p>DTFx provides <strong>durable execution</strong> — your workflow state is automatically checkpointed. If the process crashes and restarts, it resumes exactly where it left off.</p><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-csharp data-lang=csharp><span style=display:flex><span><span style=color:#75715e>// ✅ Durable: Survives crashes, retries, and scaling events</span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>[DurableTask]</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>public</span> <span style=color:#66d9ef>class</span> <span style=color:#a6e22e>OrderOrchestration</span> : TaskOrchestration&lt;OrderResult, Order&gt;
+</span></span><span style=display:flex><span>{
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>public</span> <span style=color:#66d9ef>override</span> <span style=color:#66d9ef>async</span> Task&lt;OrderResult&gt; RunAsync(
+</span></span><span style=display:flex><span>        TaskOrchestrationContext context, Order order)
+</span></span><span style=display:flex><span>    {
+</span></span><span style=display:flex><span>        <span style=color:#75715e>// Each activity is checkpointed after completion</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>var</span> inventoryResult = <span style=color:#66d9ef>await</span> context.CallActivityAsync&lt;InventoryResult&gt;(
+</span></span><span style=display:flex><span>            nameof(ReserveInventory), order.Items);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>var</span> paymentResult = <span style=color:#66d9ef>await</span> context.CallActivityAsync&lt;PaymentResult&gt;(
+</span></span><span style=display:flex><span>            nameof(ChargePayment), order.PaymentInfo);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#75715e>// If the process crashes HERE and restarts,</span>
+</span></span><span style=display:flex><span>        <span style=color:#75715e>// it knows inventory and payment are done.</span>
+</span></span><span style=display:flex><span>        <span style=color:#75715e>// It skips straight to shipping.</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>var</span> shipment = <span style=color:#66d9ef>await</span> context.CallActivityAsync&lt;ShipmentResult&gt;(
+</span></span><span style=display:flex><span>            nameof(CreateShipment), order);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>await</span> context.CallActivityAsync(
+</span></span><span style=display:flex><span>            nameof(SendConfirmation), 
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>new</span> ConfirmationRequest(order, shipment));
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>new</span> OrderResult(
+</span></span><span style=display:flex><span>            inventoryResult, paymentResult, shipment);
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></td></tr></table></div></div><h3 id=how-durability-works>How Durability Works</h3><p>The framework uses <strong>event sourcing</strong> under the hood:</p><pre tabindex=0><code>Event Log:
+1. OrchestratorStarted(orderId: &#34;ORD-123&#34;)
+2. ActivityScheduled(&#34;ReserveInventory&#34;)
+3. ActivityCompleted(&#34;ReserveInventory&#34;, result: { reserved: true })
+4. ActivityScheduled(&#34;ChargePayment&#34;)
+5. ActivityCompleted(&#34;ChargePayment&#34;, result: { chargeId: &#34;ch_abc&#34; })
+   💥 CRASH
+   
+   --- Process Restarts ---
+   
+6. OrchestratorStarted(orderId: &#34;ORD-123&#34;)  ← Replays events 1-5
+   → Skips ReserveInventory (already done)
+   → Skips ChargePayment (already done)
+7. ActivityScheduled(&#34;CreateShipment&#34;)       ← Resumes here
+8. ActivityCompleted(&#34;CreateShipment&#34;, result: { trackingId: &#34;TRK-456&#34; })
+9. ActivityScheduled(&#34;SendConfirmation&#34;)
+10. ActivityCompleted(&#34;SendConfirmation&#34;)
+11. OrchestratorCompleted(orderId: &#34;ORD-123&#34;)
+</code></pre><h2 id=adding-net-aspire-the-developer-experience-layer>Adding .NET Aspire: The Developer Experience Layer</h2><p>Aspire handles the infrastructure and observability that DTFx doesn&rsquo;t cover. Together, they&rsquo;re a powerful combination.</p><h3 id=setting-up-the-apphost>Setting Up the AppHost</h3><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-csharp data-lang=csharp><span style=display:flex><span><span style=color:#75715e>// AppHost/Program.cs</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>var</span> builder = DistributedApplication.CreateBuilder(args);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// Infrastructure</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>var</span> storage = builder.AddAzureStorage(<span style=color:#e6db74>&#34;storage&#34;</span>)
+</span></span><span style=display:flex><span>    .RunAsEmulator();  <span style=color:#75715e>// Local development uses emulator</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>var</span> taskHub = storage.AddBlobs(<span style=color:#e6db74>&#34;task-hub&#34;</span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// Services</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>var</span> orderApi = builder.AddProject&lt;Projects.OrderApi&gt;(<span style=color:#e6db74>&#34;order-api&#34;</span>)
+</span></span><span style=display:flex><span>    .WithReference(taskHub);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>var</span> inventoryService = builder.AddProject&lt;Projects.InventoryService&gt;(<span style=color:#e6db74>&#34;inventory&#34;</span>)
+</span></span><span style=display:flex><span>    .WithReference(taskHub);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>var</span> paymentService = builder.AddProject&lt;Projects.PaymentService&gt;(<span style=color:#e6db74>&#34;payments&#34;</span>)
+</span></span><span style=display:flex><span>    .WithReference(taskHub);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>var</span> shippingService = builder.AddProject&lt;Projects.ShippingService&gt;(<span style=color:#e6db74>&#34;shipping&#34;</span>)
+</span></span><span style=display:flex><span>    .WithReference(taskHub);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>builder.Build().Run();
+</span></span></code></pre></td></tr></table></div></div><h3 id=configuring-dtfx-with-aspire>Configuring DTFx with Aspire</h3><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">30
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">31
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">32
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">33
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">34
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">35
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">36
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">37
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">38
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">39
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">40
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">41
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">42
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">43
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">44
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-csharp data-lang=csharp><span style=display:flex><span><span style=color:#75715e>// OrderApi/Program.cs</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>var</span> builder = WebApplication.CreateBuilder(args);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>builder.AddServiceDefaults();  <span style=color:#75715e>// Aspire service defaults</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// Add Durable Task with Azure Storage backend</span>
+</span></span><span style=display:flex><span>builder.Services.AddDurableTaskWorker(options =&gt;
+</span></span><span style=display:flex><span>{
+</span></span><span style=display:flex><span>    options.AddOrchestration&lt;OrderOrchestration&gt;();
+</span></span><span style=display:flex><span>    options.AddActivity&lt;ReserveInventory&gt;();
+</span></span><span style=display:flex><span>    options.AddActivity&lt;ChargePayment&gt;();
+</span></span><span style=display:flex><span>    options.AddActivity&lt;CreateShipment&gt;();
+</span></span><span style=display:flex><span>    options.AddActivity&lt;SendConfirmation&gt;();
+</span></span><span style=display:flex><span>});
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>builder.Services.AddDurableTaskClient();
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>var</span> app = builder.Build();
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>app.MapPost(<span style=color:#e6db74>&#34;/orders&#34;</span>, <span style=color:#66d9ef>async</span> (
+</span></span><span style=display:flex><span>    Order order, DurableTaskClient client) =&gt;
+</span></span><span style=display:flex><span>{
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>var</span> instanceId = <span style=color:#66d9ef>await</span> client.ScheduleNewOrchestrationInstanceAsync(
+</span></span><span style=display:flex><span>        nameof(OrderOrchestration), order);
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> Results.Accepted(<span style=color:#e6db74>$&#34;/orders/{instanceId}/status&#34;</span>, 
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>new</span> { instanceId, status = <span style=color:#e6db74>&#34;Processing&#34;</span> });
+</span></span><span style=display:flex><span>});
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>app.MapGet(<span style=color:#e6db74>&#34;/orders/{instanceId}/status&#34;</span>, <span style=color:#66d9ef>async</span> (
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>string</span> instanceId, DurableTaskClient client) =&gt;
+</span></span><span style=display:flex><span>{
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>var</span> metadata = <span style=color:#66d9ef>await</span> client.GetInstanceAsync(instanceId);
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> Results.Ok(<span style=color:#66d9ef>new</span>
+</span></span><span style=display:flex><span>    {
+</span></span><span style=display:flex><span>        instanceId,
+</span></span><span style=display:flex><span>        status = metadata?.RuntimeStatus.ToString(),
+</span></span><span style=display:flex><span>        createdAt = metadata?.CreatedAt,
+</span></span><span style=display:flex><span>        lastUpdatedAt = metadata?.LastUpdatedAt,
+</span></span><span style=display:flex><span>        output = metadata?.ReadOutputAs&lt;OrderResult&gt;()
+</span></span><span style=display:flex><span>    });
+</span></span><span style=display:flex><span>});
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>app.Run();
+</span></span></code></pre></td></tr></table></div></div><h3 id=implementing-activities>Implementing Activities</h3><p>Each activity is a focused, retriable unit of work:</p><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">30
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">31
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">32
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-csharp data-lang=csharp><span style=display:flex><span><span style=color:#a6e22e>[DurableTask]</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>public</span> <span style=color:#66d9ef>class</span> <span style=color:#a6e22e>ReserveInventory</span> : TaskActivity&lt;List&lt;OrderItem&gt;, InventoryResult&gt;
+</span></span><span style=display:flex><span>{
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>private</span> <span style=color:#66d9ef>readonly</span> InventoryClient _inventory;
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>private</span> <span style=color:#66d9ef>readonly</span> ILogger&lt;ReserveInventory&gt; _logger;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>public</span> ReserveInventory(
+</span></span><span style=display:flex><span>        InventoryClient inventory, 
+</span></span><span style=display:flex><span>        ILogger&lt;ReserveInventory&gt; logger)
+</span></span><span style=display:flex><span>    {
+</span></span><span style=display:flex><span>        _inventory = inventory;
+</span></span><span style=display:flex><span>        _logger = logger;
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>public</span> <span style=color:#66d9ef>override</span> <span style=color:#66d9ef>async</span> Task&lt;InventoryResult&gt; RunAsync(
+</span></span><span style=display:flex><span>        TaskActivityContext context, List&lt;OrderItem&gt; items)
+</span></span><span style=display:flex><span>    {
+</span></span><span style=display:flex><span>        _logger.LogInformation(
+</span></span><span style=display:flex><span>            <span style=color:#e6db74>&#34;Reserving inventory for {Count} items, instance {Id}&#34;</span>,
+</span></span><span style=display:flex><span>            items.Count, context.InstanceId);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>var</span> result = <span style=color:#66d9ef>await</span> _inventory.ReserveAsync(items);
+</span></span><span style=display:flex><span>        
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> (!result.Success)
+</span></span><span style=display:flex><span>        {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>throw</span> <span style=color:#66d9ef>new</span> InventoryException(
+</span></span><span style=display:flex><span>                <span style=color:#e6db74>$&#34;Failed to reserve: {result.FailureReason}&#34;</span>);
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> result;
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></td></tr></table></div></div><h2 id=advanced-patterns>Advanced Patterns</h2><h3 id=fan-out--fan-in>Fan-Out / Fan-In</h3><p>Process multiple items in parallel and wait for all to complete:</p><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-csharp data-lang=csharp><span style=display:flex><span><span style=color:#66d9ef>public</span> <span style=color:#66d9ef>override</span> <span style=color:#66d9ef>async</span> Task&lt;BatchResult&gt; RunAsync(
+</span></span><span style=display:flex><span>    TaskOrchestrationContext context, BatchOrder batch)
+</span></span><span style=display:flex><span>{
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// Fan-out: process all items in parallel</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>var</span> tasks = batch.Items.Select(item =&gt;
+</span></span><span style=display:flex><span>        context.CallActivityAsync&lt;ItemResult&gt;(
+</span></span><span style=display:flex><span>            nameof(ProcessItem), item));
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// Fan-in: wait for all to complete</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>var</span> results = <span style=color:#66d9ef>await</span> Task.WhenAll(tasks);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// Aggregate results</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>var</span> summary = <span style=color:#66d9ef>await</span> context.CallActivityAsync&lt;BatchSummary&gt;(
+</span></span><span style=display:flex><span>        nameof(AggregateBatchResults), results);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>new</span> BatchResult(summary);
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></td></tr></table></div></div><h3 id=human-approval-workflow>Human Approval Workflow</h3><p>Wait for external events (like a manager&rsquo;s approval):</p><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-csharp data-lang=csharp><span style=display:flex><span><span style=color:#66d9ef>public</span> <span style=color:#66d9ef>override</span> <span style=color:#66d9ef>async</span> Task&lt;ApprovalResult&gt; RunAsync(
+</span></span><span style=display:flex><span>    TaskOrchestrationContext context, PurchaseRequest request)
+</span></span><span style=display:flex><span>{
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> (request.Amount &gt; <span style=color:#ae81ff>10_000</span>)
+</span></span><span style=display:flex><span>    {
+</span></span><span style=display:flex><span>        <span style=color:#75715e>// Send approval request notification</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>await</span> context.CallActivityAsync(
+</span></span><span style=display:flex><span>            nameof(SendApprovalRequest), request);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#75715e>// Wait up to 72 hours for approval</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>var</span> approval = <span style=color:#66d9ef>await</span> context.WaitForExternalEvent&lt;ApprovalDecision&gt;(
+</span></span><span style=display:flex><span>            <span style=color:#e6db74>&#34;approval-response&#34;</span>,
+</span></span><span style=display:flex><span>            TimeSpan.FromHours(<span style=color:#ae81ff>72</span>));
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> (approval?.Approved != <span style=color:#66d9ef>true</span>)
+</span></span><span style=display:flex><span>        {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>return</span> ApprovalResult.Rejected(approval?.Reason);
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>await</span> context.CallActivityAsync(nameof(ProcessPurchase), request);
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> ApprovalResult.Approved();
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></td></tr></table></div></div><h3 id=retry-policies>Retry Policies</h3><p>Handle transient failures automatically:</p><div class=highlight><div style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">9
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-csharp data-lang=csharp><span style=display:flex><span><span style=color:#66d9ef>var</span> retryOptions = <span style=color:#66d9ef>new</span> TaskOptions(
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>new</span> TaskRetryOptions(<span style=color:#66d9ef>new</span> RetryPolicy(
+</span></span><span style=display:flex><span>        maxNumberOfAttempts: <span style=color:#ae81ff>3</span>,
+</span></span><span style=display:flex><span>        firstRetryInterval: TimeSpan.FromSeconds(<span style=color:#ae81ff>5</span>),
+</span></span><span style=display:flex><span>        backoffCoefficient: <span style=color:#ae81ff>2.0</span>  <span style=color:#75715e>// 5s, 10s, 20s</span>
+</span></span><span style=display:flex><span>    )));
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>var</span> result = <span style=color:#66d9ef>await</span> context.CallActivityAsync&lt;PaymentResult&gt;(
+</span></span><span style=display:flex><span>    nameof(ChargePayment), paymentInfo, retryOptions);
+</span></span></code></pre></td></tr></table></div></div><h2 id=observability-with-aspire-dashboard>Observability with Aspire Dashboard</h2><p>One of the biggest wins of the Aspire + DTFx combination is observability. The Aspire dashboard gives you:</p><ul><li><strong>Distributed traces</strong> — See the entire orchestration flow across services</li><li><strong>Structured logs</strong> — Every activity logs with correlation IDs</li><li><strong>Metrics</strong> — Orchestration duration, failure rates, queue depths</li><li><strong>Resource health</strong> — Status of all services, databases, and message queues</li></ul><p>No additional configuration needed — Aspire&rsquo;s <code>AddServiceDefaults()</code> wires up OpenTelemetry automatically.</p><h2 id=when-to-use-this-stack>When to Use This Stack</h2><p><strong>Good fit:</strong></p><ul><li>Multi-step business workflows (orders, onboarding, data pipelines)</li><li>Processes that must survive failures (payment flows, regulatory workflows)</li><li>Long-running processes (hours to days, with human interaction)</li><li>Fan-out/fan-in patterns (batch processing, parallel API calls)</li></ul><p><strong>Overkill for:</strong></p><ul><li>Simple request-response APIs</li><li>Fire-and-forget background jobs</li><li>Single-service applications</li></ul><h2 id=the-bottom-line>The Bottom Line</h2><p>The Durable Task Framework removes the hardest part of distributed systems — making workflows reliable despite failures. Aspire removes the second hardest part — making the developer experience bearable.</p><p>Together, they let you build workflows that are durable, observable, and genuinely enjoyable to develop. Start with a simple orchestration and expand from there.</p><hr><p><em>Content Empire covers practical .NET and cloud development patterns. Follow for in-depth technical guides.</em></p></div><footer class=post-footer><p><strong>Enjoyed this article?</strong> Follow Content Empire for more developer content.</p></footer></article></main><footer class=footer><div class=container><p>&copy; 2026 Content Empire. Build. Publish. Dominate.</p></div></footer></body></html>
