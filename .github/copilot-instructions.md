@@ -19,3 +19,24 @@
 - This repo handles: articles, AI dev course, written content distribution
 - Gumroad products: AI Dev Course ($19.99, ID: jnmqpd), K8s Course ($14.99, ID: nnefv)
 - Email: contentempire@sharebot.net (stored as BRAND_EMAIL secret)
+
+
+## GitHub Organization
+
+This repo is forked into **github.com/content-empire-pub/content-empire** — the brand's independent org.
+
+**Remotes:**
+- `origin` → tamirdresher/content-empire (personal, legacy)
+- `org` → content-empire-pub/content-empire (org, primary going forward)
+
+**Push to BOTH remotes:** `git push origin main && git push org main`
+
+**GitHub Actions Secrets (on org repo):**
+- `BRAND_EMAIL` — contentempire@sharebot.net
+- `BRAND_NAME` — Content Empire
+- `GUMROAD_STORE_URL` — Gumroad storefront
+- `GUMROAD_AI_COURSE_ID` — AI course product ID
+
+**Pages URL:** content-empire-pub.github.io/content-empire
+
+**⚠️ NEVER reference 'tamirdresher' or 'Tamir Dresher' in any public-facing content.**
