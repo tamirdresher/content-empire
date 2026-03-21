@@ -1,0 +1,17 @@
+{
+  "assignments": [
+    {
+      "timestamp": "2025-01-15T00:00:00Z",
+      "event": "initial_setup",
+      "agents": [
+        {"name": "heisenberg", "character": "Walter White", "universe": "Breaking Bad"},
+        {"name": "jesse", "character": "Jesse Pinkman", "universe": "Breaking Bad"},
+        {"name": "gus", "character": "Gus Fring", "universe": "Breaking Bad"},
+        {"name": "mike", "character": "Mike Ehrmantraut", "universe": "Breaking Bad"},
+        {"name": "saul", "character": "Saul Goodman", "universe": "Breaking Bad"},
+        {"name": "ralph", "character": "Badger", "universe": "Breaking Bad"},
+        {"name": "scribe", "character": "Scribe", "universe": "Breaking Bad"}
+      ]
+    }
+  ]
+}

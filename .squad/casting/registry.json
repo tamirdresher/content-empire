@@ -1,0 +1,66 @@
+{
+  "agents": [
+    {
+      "name": "heisenberg",
+      "character": "Walter White",
+      "universe": "Breaking Bad",
+      "role": "Lead Producer",
+      "legacy_named": true,
+      "assigned_at": "2025-01-15T00:00:00Z"
+    },
+    {
+      "name": "jesse",
+      "character": "Jesse Pinkman",
+      "universe": "Breaking Bad",
+      "role": "Video Producer",
+      "legacy_named": true,
+      "assigned_at": "2025-01-15T00:00:00Z"
+    },
+    {
+      "name": "gus",
+      "character": "Gus Fring",
+      "universe": "Breaking Bad",
+      "role": "Distribution & Monetization",
+      "legacy_named": true,
+      "assigned_at": "2025-01-15T00:00:00Z"
+    },
+    {
+      "name": "mike",
+      "character": "Mike Ehrmantraut",
+      "universe": "Breaking Bad",
+      "role": "Operations",
+      "legacy_named": true,
+      "assigned_at": "2025-01-15T00:00:00Z"
+    },
+    {
+      "name": "saul",
+      "character": "Saul Goodman",
+      "universe": "Breaking Bad",
+      "role": "Marketing & Legal",
+      "legacy_named": true,
+      "assigned_at": "2025-01-15T00:00:00Z"
+    },
+    {
+      "name": "ralph",
+      "character": "Badger",
+      "universe": "Breaking Bad",
+      "role": "Work Monitor",
+      "legacy_named": true,
+      "assigned_at": "2025-01-15T00:00:00Z"
+    },
+    {
+      "name": "scribe",
+      "character": "Scribe",
+      "universe": "Breaking Bad",
+      "role": "Session Logger",
+      "legacy_named": true,
+      "assigned_at": "2025-01-15T00:00:00Z"
+    }
+  ],
+  "universes": {
+    "Breaking Bad": {
+      "agent_count": 7,
+      "used_characters": ["Walter White", "Jesse Pinkman", "Gus Fring", "Mike Ehrmantraut", "Saul Goodman", "Badger", "Scribe"]
+    }
+  }
+}

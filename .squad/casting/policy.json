@@ -1,0 +1,5 @@
+{
+  "universe_allowlist": ["*"],
+  "max_agents_per_universe": 12,
+  "overflow_strategy": "diegetic_expansion"
+}
