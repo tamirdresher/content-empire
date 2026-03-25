@@ -1,0 +1,30 @@
+name: Post to Medium
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Every Monday at 10:00 UTC
+    - cron: "0 10 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  post-to-medium:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r scripts/requirements.txt
+
+      - name: Post articles to Medium
+        env:
+          MEDIUM_INTEGRATION_TOKEN: ${{ secrets.MEDIUM_INTEGRATION_TOKEN }}
+        run: python scripts/post-to-medium.py

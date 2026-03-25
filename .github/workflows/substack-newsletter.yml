@@ -1,0 +1,28 @@
+name: Substack Newsletter
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Every Friday at 14:00 UTC
+    - cron: "0 14 * * 5"
+
+permissions:
+  contents: read
+
+jobs:
+  create-newsletter-draft:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Create Substack newsletter draft
+        env:
+          SUBSTACK_SESSION_COOKIE: ${{ secrets.SUBSTACK_SESSION_COOKIE }}
+          SUBSTACK_PUBLICATION_URL: ${{ secrets.SUBSTACK_PUBLICATION_URL }}
+        run: python scripts/substack-newsletter.py
