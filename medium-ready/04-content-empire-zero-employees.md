@@ -159,6 +159,6 @@ By the end of the week, you'll have a functioning content empire with two publis
 
 *Ready to build your own AI-powered development practice?* Check out **[AI-Powered Development: From Copilot to Full Agent Teams](https://gumroad.com/l/ai-powered-dev)** — learn prompt engineering, agent building, and production automation. **Early bird: $9.99** (regular $19.99).
 
-*Follow me on [Medium](https://medium.com/@tamirdresher) for more on building with AI.*
+*Follow Content Empire on [Medium](https://medium.com/@contentempire) for more developer productivity guides.*
 
 **Tags: #AI #ContentCreation #Solopreneur #Automation #Business #Productivity #Writing #Marketing**
