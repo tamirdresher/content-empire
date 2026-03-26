@@ -1,12 +1,9 @@
 [build]
   publish = "docs"
-  command = "cd site && hugo"
-
-[build.environment]
-  HUGO_VERSION = "0.147.0"
 
 [[headers]]
   for = "/*"
   [headers.values]
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
+    Cache-Control = "public, max-age=3600"
