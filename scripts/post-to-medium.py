@@ -5,8 +5,9 @@ Post articles from medium-ready/ to Medium as drafts.
 Usage:
     python post-to-medium.py [--dry-run]
 
-Env vars required:
-    MEDIUM_INTEGRATION_TOKEN  - Medium integration token
+Env vars required (ONE of these):
+    MEDIUM_SESSION_COOKIE  - Medium session cookie (sid=... value)
+    MEDIUM_INTEGRATION_TOKEN - Legacy integration token (if still valid)
 
 Tracking file: scripts/medium-posted.json
 """
@@ -35,6 +36,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 ARTICLES_DIR = REPO_ROOT / "medium-ready"
 TRACKING_FILE = Path(__file__).resolve().parent / "medium-posted.json"
 MEDIUM_API = "https://api.medium.com/v1"
+MEDIUM_INTERNAL_API = "https://medium.com/_/api"
+MEDIUM_USER_ID = "707207c087d9"  # tdsquadai account
 
 
 def md_to_html(md_text: str) -> str:
@@ -42,7 +45,6 @@ def md_to_html(md_text: str) -> str:
         return markdown2.markdown(md_text, extras=["fenced-code-blocks", "tables"])
     if _MD_BACKEND == "mistune":
         return mistune.html(md_text)
-    # Minimal stdlib fallback — headings, paragraphs, code fences
     lines = md_text.splitlines()
     html_parts = []
     in_code = False
@@ -68,7 +70,6 @@ def md_to_html(md_text: str) -> str:
 
 
 def parse_frontmatter(md_text: str) -> tuple[dict, str]:
-    """Strip YAML frontmatter and return (meta_dict, remaining_markdown)."""
     meta = {}
     if md_text.startswith("---"):
         end = md_text.find("\n---", 3)
@@ -83,7 +84,6 @@ def parse_frontmatter(md_text: str) -> tuple[dict, str]:
 
 
 def extract_title_and_body(md_text: str) -> tuple[str, str]:
-    """Return (title, body_without_title) from markdown text (after frontmatter stripped)."""
     lines = md_text.splitlines()
     title = ""
     body_lines = []
@@ -98,7 +98,6 @@ def extract_title_and_body(md_text: str) -> tuple[str, str]:
 
 
 def infer_tags(md_text: str, filename: str) -> list[str]:
-    """Infer up to 5 tags from filename keywords and content."""
     TAG_KEYWORDS = {
         "ai": ["ai", "agent", "llm", "gpt", "copilot", "artificial"],
         "automation": ["automat", "workflow", "pipeline", "ci/cd", "github actions"],
@@ -122,19 +121,9 @@ def infer_tags(md_text: str, filename: str) -> list[str]:
     return tags or ["software-engineering", "automation"]
 
 
-def medium_request(method: str, path: str, token: str, body: dict | None = None):
-    url = f"{MEDIUM_API}{path}"
+def _make_request(method: str, url: str, headers: dict, body: dict | None = None):
     data = json.dumps(body).encode() if body else None
-    req = urllib.request.Request(
-        url,
-        data=data,
-        headers={
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-        },
-        method=method,
-    )
+    req = urllib.request.Request(url, data=data, headers=headers, method=method)
     try:
         with urllib.request.urlopen(req) as resp:
             return json.loads(resp.read())
@@ -144,9 +133,56 @@ def medium_request(method: str, path: str, token: str, body: dict | None = None)
         raise
 
 
-def get_author_id(token: str) -> str:
-    data = medium_request("GET", "/me", token)
-    return data["data"]["id"]
+def post_via_integration_token(token: str, title: str, html: str, tags: list[str]) -> str:
+    """Post using legacy integration token (Bearer auth)."""
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+    user_data = _make_request("GET", f"{MEDIUM_API}/me", headers)
+    author_id = user_data["data"]["id"]
+
+    payload = {
+        "title": title,
+        "contentFormat": "html",
+        "content": html,
+        "tags": tags[:5],
+        "publishStatus": "draft",
+    }
+    result = _make_request("POST", f"{MEDIUM_API}/users/{author_id}/posts", headers, payload)
+    return result["data"]["url"]
+
+
+def post_via_session_cookie(session_cookie: str, title: str, html: str, tags: list[str]) -> str:
+    """Post using session cookie (unofficial internal API)."""
+    import urllib.parse
+
+    # URL-decode the cookie if it's encoded
+    sid_value = urllib.parse.unquote(session_cookie)
+
+    headers = {
+        "Cookie": f"sid={urllib.parse.quote(sid_value, safe='')}; uid={MEDIUM_USER_ID}",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "X-Obvious-CID": "article-editor-v2",
+        "Referer": "https://medium.com/new-story",
+        "Origin": "https://medium.com",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    }
+
+    payload = {
+        "title": title,
+        "contentFormat": "html",
+        "content": html,
+        "tags": [{"slug": t, "name": t} for t in tags[:5]],
+        "publishStatus": "draft",
+        "notifyFollowers": False,
+    }
+
+    url = f"{MEDIUM_INTERNAL_API}/users/{MEDIUM_USER_ID}/posts"
+    result = _make_request("POST", url, headers, payload)
+    return result.get("payload", {}).get("value", {}).get("url", "https://medium.com/me/stories/drafts")
 
 
 def load_tracking() -> dict:
@@ -159,27 +195,20 @@ def save_tracking(tracking: dict) -> None:
     TRACKING_FILE.write_text(json.dumps(tracking, indent=2))
 
 
-def post_article(author_id: str, token: str, title: str, html: str, tags: list[str]) -> str:
-    payload = {
-        "title": title,
-        "contentFormat": "html",
-        "content": html,
-        "tags": tags[:5],
-        "publishStatus": "draft",
-    }
-    result = medium_request("POST", f"/users/{author_id}/posts", token, payload)
-    return result["data"]["url"]
-
-
 def main():
     parser = argparse.ArgumentParser(description="Post articles to Medium as drafts")
     parser.add_argument("--dry-run", action="store_true", help="Preview without posting")
     args = parser.parse_args()
 
-    token = os.environ.get("MEDIUM_INTEGRATION_TOKEN", "")
-    if not token and not args.dry_run:
-        print("✗ MEDIUM_INTEGRATION_TOKEN not set.", file=sys.stderr)
+    # Auth: prefer session cookie (integration tokens removed for new accounts)
+    session_cookie = os.environ.get("MEDIUM_SESSION_COOKIE", "")
+    integration_token = os.environ.get("MEDIUM_INTEGRATION_TOKEN", "")
+
+    if not session_cookie and not integration_token and not args.dry_run:
+        print("✗ Set MEDIUM_SESSION_COOKIE (preferred) or MEDIUM_INTEGRATION_TOKEN", file=sys.stderr)
         sys.exit(1)
+
+    use_cookie_auth = bool(session_cookie)
 
     if _MD_BACKEND is None:
         print("⚠  No markdown library found. Using minimal HTML fallback.")
@@ -192,11 +221,11 @@ def main():
         print(f"No articles found in {ARTICLES_DIR}")
         sys.exit(0)
 
-    author_id = None
     if not args.dry_run:
-        print("Fetching Medium author ID…")
-        author_id = get_author_id(token)
-        print(f"  Author ID: {author_id}")
+        if use_cookie_auth:
+            print(f"Auth: session cookie (user ID: {MEDIUM_USER_ID})")
+        else:
+            print("Auth: integration token (legacy)")
 
     posted = 0
     skipped = 0
@@ -213,7 +242,7 @@ def main():
         title, body = extract_title_and_body(md_text)
         if not title:
             title = meta.get("title") or article_path.stem.replace("-", " ").title()
-        # Prefer frontmatter tags if available
+
         fm_tags_raw = meta.get("tags", "")
         if fm_tags_raw:
             import ast
@@ -235,11 +264,17 @@ def main():
             print("  [DRY RUN] Would post to Medium")
         else:
             print("  Posting…")
-            url = post_article(author_id, token, title, html, tags)
-            tracking[key] = {"title": title, "url": url}
-            save_tracking(tracking)
-            print(f"  ✓ Draft created: {url}")
-            posted += 1
+            try:
+                if use_cookie_auth:
+                    url = post_via_session_cookie(session_cookie, title, html, tags)
+                else:
+                    url = post_via_integration_token(integration_token, title, html, tags)
+                tracking[key] = {"title": title, "url": url}
+                save_tracking(tracking)
+                print(f"  ✓ Draft created: {url}")
+                posted += 1
+            except Exception as e:
+                print(f"  ✗ Failed: {e}", file=sys.stderr)
 
     print(f"\nDone. Posted: {posted}, Skipped: {skipped}")
 
