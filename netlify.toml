@@ -1,5 +1,9 @@
 [build]
+  command = "cd site && hugo --minify --baseURL https://content-empire-tdsquad.netlify.app/"
   publish = "docs"
+
+[build.environment]
+  HUGO_VERSION = "0.147.0"
 
 [[headers]]
   for = "/*"

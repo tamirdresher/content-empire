@@ -19,7 +19,7 @@ jobs:
           extended: true
 
       - name: Build
-        run: cd site && hugo --minify
+        run: cd site && hugo --minify --baseURL https://content-empire-tdsquad.netlify.app/
 
       - name: Deploy to Netlify
         uses: nwtgck/actions-netlify@v3
