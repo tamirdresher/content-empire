@@ -7,7 +7,7 @@ Usage:
     python substack-newsletter.py [--dry-run]
 
 Env vars required:
-    SUBSTACK_SESSION_COOKIE     - connect.sid cookie value
+    SUBSTACK_SESSION_COOKIE     - substack.sid cookie value
     SUBSTACK_PUBLICATION_URL    - e.g. https://contentempire.substack.com
 
 The script picks the 3–5 most-recently-modified articles and formats
@@ -136,7 +136,7 @@ def substack_post(pub_url: str, cookie: str, payload: dict) -> dict:
         data=data,
         headers={
             "Content-Type": "application/json",
-            "Cookie": f"connect.sid={cookie}",
+            "Cookie": f"substack.sid={cookie}",
             "Accept": "application/json",
             "User-Agent": "ContentEmpire-Newsletter-Bot/1.0",
         },
