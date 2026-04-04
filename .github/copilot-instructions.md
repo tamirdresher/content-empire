@@ -26,7 +26,7 @@
 This repo is forked into **github.com/content-empire-pub/content-empire** — the brand's independent org.
 
 **Remotes:**
-- `origin` → tamirdresher/content-empire (personal, legacy)
+- `origin` → tdsquadAI/content-empire (primary)
 - `org` → content-empire-pub/content-empire (org, primary going forward)
 
 **Push to BOTH remotes:** `git push origin main && git push org main`
@@ -39,7 +39,7 @@ This repo is forked into **github.com/content-empire-pub/content-empire** — th
 
 **Pages URL:** content-empire-pub.github.io/content-empire
 
-**⚠️ NEVER reference 'tamirdresher' or 'Tamir Dresher' in any public-facing content.**
+**⚠️ NEVER reference personal identities in any public-facing content. Use the brand name only.**
 
 ## Credential Access (Cross-Machine)
 

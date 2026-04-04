@@ -7,13 +7,13 @@
     },
     "aws": {
       "earnings_30d": 1.25,
-      "affiliate_link_format": "https://www.amazon.com/dp/{ASIN}?tag=tamirdresher2-20",
+      "affiliate_link_format": "https://www.amazon.com/dp/{ASIN}?tag=${AMAZON_TAG}",
       "status": "active",
       "signup_url": "https://affiliate-program.amazon.com/",
-      "store_id": "tamirdresher2-20",
-      "note": "Payment info needs to be submitted in dashboard",
+      "store_id": "${AMAZON_TAG}",
+      "note": "AMAZON_TAG must be set via environment variable or GitHub Variables",
       "program": "Amazon Associates",
-      "tracking_id": "tamirdresher2-20"
+      "tracking_id": "${AMAZON_TAG}"
     },
     "cloudflare": {
       "referral_url": "https://dash.cloudflare.com/sign-up?ref=PLACEHOLDER",

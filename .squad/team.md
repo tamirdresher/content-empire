@@ -18,7 +18,7 @@
 1. YouTube (TechAI Explained) — ad revenue + affiliate links in descriptions
 2. Gumroad (tdsquad.gumroad.com) — digital products
 3. Udemy/Skillshare — online courses
-4. Blog (tamirdresher.com) — affiliate links, sponsored content
+4. Blog (content-empire-pub.github.io) — affiliate links, sponsored content
 5. SaaS Finder Hub — SEO affiliate articles
 6. Newsletter (Kit) — email marketing → conversions
 7. Books — publisher royalties

@@ -10,7 +10,7 @@
 #>
 
 param(
-    [string]$Owner = "tamirdresher",
+    [string]$Owner = "tdsquadAI",
     [string]$Repo  = "content-empire",
     [int]$StaleDays = 3,
     [switch]$Loop,
@@ -33,7 +33,7 @@ $CompanyObjectives = @(
     @{ Key="digital-products"; Title="Create AI Development Toolkit digital product (\$14.99)";        Body="Create the AI Development Toolkit (templates + configs) at `$14.99 on Gumroad. See REVENUE_STRATEGY.md for full product spec."; Labels="monetization,product" }
 )
 
-function gh-p { gh auth switch --user tamirdresher 2>$null | Out-Null; gh @args }
+function gh-p { gh @args }
 
 function Get-StaleIssues {
     $cutoff = (Get-Date).AddDays(-$StaleDays).ToString("yyyy-MM-ddTHH:mm:ssZ")
